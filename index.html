@@ -1,0 +1,3656 @@
+```react
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  Shield, Terminal, Bot, Cpu, Sparkles, Search, Filter, ShoppingCart,
+  User, Lock, Key, Download, CheckCircle2, Clock, XCircle, AlertTriangle,
+  Plus, Edit3, Trash2, Copy, Check, ExternalLink, ChevronRight, ChevronDown,
+  LayoutDashboard, Package, Users, CreditCard, Settings, LogOut, Menu, X,
+  Zap, Code2, Server, Database, Eye, RefreshCw, MessageSquare, HelpCircle,
+  ArrowRight, Layers, Activity, Globe, FileCode
+} from 'lucide-react';
+
+// ============================================================================
+// 1. TYPES & INTERFACES (TypeScript Strict Architecture)
+// ============================================================================
+
+type Category = 'TOOL' | 'DISCORD BOT' | 'SCRIPT' | 'AUTOMATION' | 'UTILITIES';
+type ProductBadge = 'NEW' | 'HOT' | 'BEST SELLER' | 'NONE';
+type ProductStatus = 'ACTIVE' | 'MAINTENANCE';
+type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED';
+type UserRole = 'USER' | 'ADMIN';
+type PageRoute = 'HOME' | 'PRODUCTS' | 'PRODUCT_DETAIL' | 'CHECKOUT' | 'ACCOUNT' | 'ADMIN' | 'SUPPORT' | 'ARCHITECTURE';
+
+interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  category: Category;
+  badge: ProductBadge;
+  status: ProductStatus;
+  price: number; // VND
+  version: string;
+  shortDescription: string;
+  fullDescription: string;
+  features: string[];
+  usageGuide: string[];
+  techStack: string[];
+  changelog: string;
+  artVariant: 'cyber-bot' | 'terminal-cli' | 'automation-flow' | 'security-shield' | 'macro-engine';
+  createdAt: string;
+}
+
+interface UserAccount {
+  id: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+interface Order {
+  id: string;
+  userId: string;
+  username: string;
+  userEmail: string;
+  productId: string;
+  productName: string;
+  amount: number;
+  paymentMethod: 'VIETQR_BANK' | 'MOMO_MANUAL' | 'PAYOS_GATEWAY';
+  status: OrderStatus;
+  transferNote: string;
+  createdAt: string;
+  paidAt?: string;
+}
+
+interface LicenseKey {
+  id: string;
+  key: string; // Format: Key_XXXXX...
+  orderId: string;
+  userId: string;
+  username: string;
+  productId: string;
+  productName: string;
+  status: 'ACTIVE' | 'REVOKED';
+  expiresAt: string; // 'LIFETIME' or ISO date
+  createdAt: string;
+}
+
+interface SupportTicket {
+  id: string;
+  name: string;
+  contact: string;
+  subject: string;
+  message: string;
+  status: 'OPEN' | 'RESOLVED';
+  createdAt: string;
+}
+
+interface SystemConfig {
+  announcementBanner: string;
+  showAnnouncement: boolean;
+  discordInviteUrl: string;
+  paymentGatewayConnected: boolean;
+  paymentGatewayProvider: string;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountOwner: string;
+}
+
+interface ToastMessage {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+}
+
+// ============================================================================
+// 2. INITIAL SEED DATA (Authentic Software Catalog - Zero Fake Orders/Sales)
+// ============================================================================
+
+const INITIAL_PRODUCTS: Product[] = [
+  {
+    id: 'prod_01',
+    slug: 'saviour-discord-warden-bot',
+    name: 'SAVIOUR Warden — Anti-Raid & Auto-Mod Bot',
+    category: 'DISCORD BOT',
+    badge: 'BEST SELLER',
+    status: 'ACTIVE',
+    price: 350000,
+    version: 'v3.4.2',
+    shortDescription: 'Hệ thống bảo vệ Server Discord đa tầng, chống Anti-Raid, Anti-Nuke, tự động gắn Tag & phân quyền thông minh độ trễ < 25ms.',
+    fullDescription: 'SAVIOUR Warden là giải pháp bot bảo mật và quản trị cộng đồng Discord chuyên sâu được viết bằng TypeScript & Discord.js v14. Tích hợp thuật toán phát hiện spam token, tự động khóa kênh khi phát hiện đột kích hàng loạt, hệ thống Ticket hỗ trợ khách hàng và xác thực License Key trực tiếp qua Slash Commands.',
+    features: [
+      'Anti-Nuke & Anti-Raid thời gian thực với cơ chế Quarantine tự động',
+      'Hệ thống Verification Captcha ảnh & lọc tài khoản Clone mới tạo',
+      'Auto-Role, Auto-Tag thành viên VIP & đồng bộ trạng thái thanh toán',
+      'Panel Ticket đa danh mục kèm xuất transcript HTML tự động',
+      'Tích hợp Webhook log chi tiết mọi hành động quản trị viên'
+    ],
+    usageGuide: [
+      'Tải gói mã nguồn & cấu hình sau khi đơn hàng được xác nhận PAID.',
+      'Giải nén và cài đặt môi trường Node.js v20+ trên VPS hoặc máy chủ.',
+      'Điền DISCORD_TOKEN, CLIENT_ID và SAVIOUR_LICENSE_KEY vào file .env.',
+      'Chạy lệnh `npm install && npm run deploy` để đăng ký Slash Commands và khởi động.'
+    ],
+    techStack: ['TypeScript', 'Discord.js v14', 'Redis', 'PostgreSQL'],
+    changelog: 'v3.4.2: Tối ưu tốc độ phản hồi Slash Command, bổ sung bộ lọc Anti-Phishing link mới.',
+    artVariant: 'cyber-bot',
+    createdAt: '2026-01-15T08:00:00Z'
+  },
+  {
+    id: 'prod_02',
+    slug: 'saviour-termux-hyper-cli',
+    name: 'SAVIOUR HyperCLI — Termux & Linux Multi-Tool',
+    category: 'TOOL',
+    badge: 'HOT',
+    status: 'ACTIVE',
+    price: 250000,
+    version: 'v2.8.0',
+    shortDescription: 'Bộ công cụ dòng lệnh tối ưu cho Termux & Linux: quản lý Proxy, kiểm tra sống/chết tài nguyên, tự động hóa tác vụ mạng đa luồng.',
+    fullDescription: 'Được thiết kế riêng cho môi trường Termux (Android) và Ubuntu/Debian VPS, SAVIOUR HyperCLI cung cấp giao diện TUI sắc nét với khả năng xử lý bất đồng bộ tốc độ cao, hỗ trợ xoay vòng SOCKS5/HTTP Proxy, giám sát tài nguyên hệ thống và xuất báo cáo JSON/CSV tức thì.',
+    features: [
+      'Kiến trúc Async I/O xử lý hàng trăm luồng tác vụ nhẹ nhàng trên thiết bị di động',
+      'Trình quản lý & kiểm tra chất lượng Proxy (Latency, Anonymity, GeoIP)',
+      'Tự động sao lưu cấu hình phiên làm việc và khôi phục khi mất kết nối',
+      'Hệ thống xác thực HWID + License Key bảo mật chống chia sẻ trái phép',
+      'Cập nhật module trực tiếp qua lệnh `saviour update`'
+    ],
+    usageGuide: [
+      'Cài đặt Python 3.11+ trên Termux (`pkg install python git`).',
+      'Tải file cài đặt `saviour-hypercli.zip` tại mục Tải xuống sau khi thanh toán.',
+      'Chạy `pip install -r requirements.txt` và khởi chạy `python main.py`.',
+      'Nhập mã bản quyền định dạng `Key_XXXXX` để kích hoạt thiết bị.'
+    ],
+    techStack: ['Python 3.11', 'AsyncIO', 'Rich TUI', 'Cython'],
+    changelog: 'v2.8.0: Giảm 35% mức tiêu thụ RAM trên Termux Android 14/15.',
+    artVariant: 'terminal-cli',
+    createdAt: '2026-02-02T10:30:00Z'
+  },
+  {
+    id: 'prod_03',
+    slug: 'saviour-flow-auto-dm',
+    name: 'SAVIOUR FlowEngine — Browser & Cookie Automation',
+    category: 'AUTOMATION',
+    badge: 'NEW',
+    status: 'ACTIVE',
+    price: 490000,
+    version: 'v1.9.5',
+    shortDescription: 'Nền tảng tự động hóa trình duyệt chống phát hiện vân tay (Anti-Detect), quản lý phiên Cookie và kịch bản tương tác thông minh.',
+    fullDescription: 'SAVIOUR FlowEngine giúp tự động hóa các quy trình lặp lại trên nền tảng web một cách an toàn. Tích hợp trình mô phỏng hành vi người dùng thật (di chuyển chuột Bezier, độ trễ gõ phím ngẫu nhiên), cô lập Profile và hỗ trợ gắn Proxy riêng biệt cho từng luồng chạy.',
+    features: [
+      'Mô phỏng hành vi tương tác tự nhiên với thuật toán đường cong Bezier',
+      'Quản lý đa phiên Cookie/Token mã hóa AES-256 cục bộ',
+      'Hỗ trợ gán Proxy riêng (HTTP/SOCKS5) cho từng Profile trình duyệt',
+      'Trình tạo kịch bản kéo-thả hoặc tùy biến bằng file JSON cấu hình',
+      'Tự động tạm dừng thông minh khi phát hiện giới hạn tần suất (Rate-limit)'
+    ],
+    usageGuide: [
+      'Giải nén bộ cài đặt SAVIOUR FlowEngine trên Windows 10/11 (64-bit).',
+      'Nhập License Key được cấp trong trang Tài khoản để mở khóa Engine.',
+      'Import danh sách Profile / Cookie và cấu hình Proxy tương ứng.',
+      'Chọn kịch bản tự động hóa và nhấn Start để theo dõi log trực quan.'
+    ],
+    techStack: ['Node.js', 'Playwright Core', 'Chromium Custom', 'AES-256'],
+    changelog: 'v1.9.5: Nâng cấp nhân Chromium mới nhất, cải thiện cơ chế lưu phiên Cookie.',
+    artVariant: 'automation-flow',
+    createdAt: '2026-03-10T14:00:00Z'
+  },
+  {
+    id: 'prod_04',
+    slug: 'saviour-keyauth-shield-sdk',
+    name: 'SAVIOUR ShieldAuth — Software Licensing SDK',
+    category: 'SCRIPT',
+    badge: 'NEW',
+    status: 'ACTIVE',
+    price: 390000,
+    version: 'v4.1.0',
+    shortDescription: 'Thư viện bảo vệ bản quyền phần mềm cho Developer: khóa HWID, chống Debug/Dump bộ nhớ, mã hóa giao tiếp API RSA-4096.',
+    fullDescription: 'Dành cho các lập trình viên phát triển tool/script thương mại. SAVIOUR ShieldAuth cung cấp bộ SDK tích hợp nhanh vào Python, C# và Node.js giúp xác thực License Key, ràng buộc mã phần cứng (HWID Lock), phát hiện trình gỡ lỗi (Anti-Debug) và tự động thu hồi phiên khi phát hiện gian lận.',
+    features: [
+      'Mã hóa đầu cuối RSA-4096 + HMAC-SHA256 chống giả mạo gói tin phản hồi',
+      'Cơ chế khóa thiết bị HWID thông minh, cho phép Reset HWID có kiểm soát',
+      'Tích hợp Anti-Debug, Anti-VM và kiểm tra tính toàn vẹn mã nguồn (Checksum)',
+      'Hỗ trợ sẵn SDK cho Python, Node.js/TypeScript và C# .NET 8',
+      'Kèm mẫu API Server Express/PostgreSQL sạch, dễ dàng tự host'
+    ],
+    usageGuide: [
+      'Tải gói SDK & Server Boilerplate sau khi hoàn tất thanh toán.',
+      'Import module `SaviourAuth` vào dự án phần mềm của bạn.',
+      'Khởi tạo Client với App ID và Public Key của bạn.',
+      'Gọi hàm `verifyLicense(userKey)` trước khi thực thi logic chính.'
+    ],
+    techStack: ['TypeScript', 'Python', 'C# .NET', 'RSA-4096'],
+    changelog: 'v4.1.0: Bổ sung tính năng kiểm tra chữ ký số thời gian thực cho Python.',
+    artVariant: 'security-shield',
+    createdAt: '2026-04-05T09:15:00Z'
+  },
+  {
+    id: 'prod_05',
+    slug: 'saviour-nexus-macro-utility',
+    name: 'SAVIOUR Nexus — Low-Latency Macro & System Optimizer',
+    category: 'UTILITIES',
+    badge: 'HOT',
+    status: 'ACTIVE',
+    price: 190000,
+    version: 'v2.2.1',
+    shortDescription: 'Tiện ích tối ưu hóa độ trễ hệ thống Windows, giải phóng RAM thông minh và trình chạy Macro phím/chuột độ chính xác 1ms.',
+    fullDescription: 'SAVIOUR Nexus là bộ tiện ích gọn nhẹ chạy nền giúp tối ưu hóa tài nguyên CPU/RAM cho tác vụ nặng, đồng thời cung cấp bộ ghi và phát lại tổ hợp thao tác (Macro) với độ chính xác từng mili-giây và phím tắt chuyển đổi Profile tức thì.',
+    features: [
+      'Trình thực thi Macro độ chính xác 1ms với vòng lặp tùy chỉnh điều kiện',
+      'Tối ưu hóa bộ nhớ đệm (Standby List Cleaner) tự động không gây giật lag',
+      'Chuyển đổi nhanh giữa các Profile cấu hình bằng tổ hợp phím nóng',
+      'Giao diện Overlay tối giản hiển thị FPS, CPU, RAM và trạng thái Macro',
+      'Không chiếm dụng tài nguyên nền (< 15MB RAM)'
+    ],
+    usageGuide: [
+      'Tải file thực thi `SAVIOUR_Nexus_Setup.exe` sau khi đơn hàng PAID.',
+      'Chạy ứng dụng với quyền Administrator để kích hoạt bộ định thời 1ms.',
+      'Kích hoạt bằng License Key của bạn và tạo Profile Macro đầu tiên.'
+    ],
+    techStack: ['C++20', 'Win32 API', 'Direct2D', 'Rust Core'],
+    changelog: 'v2.2.1: Sửa lỗi xung đột phím nóng trên bàn phím layout 65%.',
+    artVariant: 'macro-engine',
+    createdAt: '2026-05-12T16:45:00Z'
+  }
+];
+
+const INITIAL_USERS: UserAccount[] = [
+  {
+    id: 'usr_admin_01',
+    username: 'saviour_admin',
+    email: 'admin@saviour.dev',
+    passwordHash: 'admin123',
+    role: 'ADMIN',
+    createdAt: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'usr_demo_01',
+    username: 'cyber_operator',
+    email: 'operator@saviour.dev',
+    passwordHash: 'user123',
+    role: 'USER',
+    createdAt: '2026-02-10T11:20:00Z'
+  }
+];
+
+const INITIAL_CONFIG: SystemConfig = {
+  announcementBanner: 'HỆ THỐNG SAVIOUR v3.0 ĐÃ SẴN SÀNG — CỔNG THANH TOÁN TỰ ĐỘNG ĐANG Ở CHẾ ĐỘ XÁC NHẬN THỦ CÔNG (MANUAL VERIFICATION)',
+  showAnnouncement: true,
+  discordInviteUrl: 'https://discord.gg/saviour-tech',
+  paymentGatewayConnected: false, // Honest state: not connected to live external webhook yet
+  paymentGatewayProvider: 'VietQR / PayOS / SePay Webhook',
+  bankName: 'MB BANK (Ngân hàng Quân Đội)',
+  bankAccountNumber: 'CHƯA CẤU HÌNH STK (Cập nhật tại Admin -> Cấu hình)',
+  bankAccountOwner: 'SAVIOUR DIGITAL STUDIO'
+};
+
+// ============================================================================
+// 3. HELPER UTILITIES
+// ============================================================================
+
+const formatVND = (amount: number): string => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(amount);
+};
+
+const generateLicenseKey = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const segment = (len: number) =>
+    Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `Key_${segment(5)}-${segment(5)}-${segment(5)}`;
+};
+
+const generateOrderId = (): string => {
+  const num = Math.floor(100000 + Math.random() * 900000);
+  return `ORD-${new Date().getFullYear()}-${num}`;
+};
+
+// ============================================================================
+// 4. ANIMATED CYBER-PARTICLE & GRID CANVAS BACKGROUND (Lightweight & Smooth)
+// ============================================================================
+
+const CyberBackgroundCanvas: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Lightweight particle pool (max 45 particles for 60fps smoothness)
+    const particleCount = Math.min(45, Math.floor((width * height) / 32000));
+    const particles = Array.from({ length: particleCount }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      size: Math.random() * 1.8 + 0.8,
+      color: Math.random() > 0.5 ? 'rgba(139, 92, 246, 0.55)' : 'rgba(0, 212, 255, 0.5)'
+    }));
+
+    let gridOffset = 0;
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      // Subtle futuristic perspective tech grid
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.045)';
+      ctx.lineWidth = 1;
+      const gridSize = 64;
+      gridOffset = (gridOffset + 0.15) % gridSize;
+
+      for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = gridOffset; y < height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Draw and update floating particles
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Connect nearby nodes subtly
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 130) {
+            ctx.strokeStyle = `rgba(0, 212, 255, ${0.08 * (1 - dist / 130)})`;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none z-0 opacity-90"
+      aria-hidden="true"
+    />
+  );
+};
+
+// ============================================================================
+// 5. CUSTOM VECTOR ARTWORK FOR PRODUCTS & BRAND LOGO
+// ============================================================================
+
+const SaviourLogo: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({ size = 'md' }) => {
+  const iconDim = size === 'sm' ? 'w-7 h-7' : size === 'lg' ? 'w-11 h-11' : 'w-9 h-9';
+  const textClass =
+    size === 'sm' ? 'text-lg' : size === 'lg' ? 'text-3xl' : 'text-xl sm:text-2xl';
+
+  return (
+    <div className="inline-flex items-center gap-2.5 select-none group">
+      <div className={`relative ${iconDim} flex items-center justify-center`}>
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-[#8B5CF6] to-[#00D4FF] opacity-30 blur-md group-hover:opacity-60 transition-opacity" />
+        <svg viewBox="0 0 40 40" className="w-full h-full relative z-10" fill="none">
+          <defs>
+            <linearGradient id="saviourGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8B5CF6" />
+              <stop offset="100%" stopColor="#00D4FF" />
+            </linearGradient>
+          </defs>
+          <polygon
+            points="20,2 36,11 36,29 20,38 4,29 4,11"
+            stroke="url(#saviourGrad)"
+            strokeWidth="2.2"
+            fill="#08090D"
+          />
+          <path
+            d="M25 13H16.5C14.8 13 13.5 14.3 13.5 16C13.5 17.7 14.8 19 16.5 19H23.5C25.2 19 26.5 20.3 26.5 22C26.5 23.7 25.2 25 23.5 25H14.5"
+            stroke="url(#saviourGrad)"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+          />
+          <circle cx="20" cy="7" r="1.5" fill="#00D4FF" />
+          <circle cx="20" cy="33" r="1.5" fill="#8B5CF6" />
+        </svg>
+      </div>
+      <div className="flex flex-col">
+        <span
+          className={`font-black tracking-[0.22em] bg-gradient-to-r from-white via-[#e9d5ff] to-[#00D4FF] bg-clip-text text-transparent ${textClass}`}
+        >
+          SAVIOUR
+        </span>
+        {size !== 'sm' && (
+          <span className="text-[9px] tracking-[0.32em] text-[#00D4FF]/80 font-mono uppercase -mt-1">
+            DIGITAL SYSTEMS
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ProductArtBanner: React.FC<{
+  variant: Product['artVariant'];
+  category: Category;
+  version: string;
+  compact?: boolean;
+}> = ({ variant, category, version, compact = false }) => {
+  const heightClass = compact ? 'h-44' : 'h-64 sm:h-72';
+
+  return (
+    <div
+      className={`relative w-full ${heightClass} overflow-hidden rounded-t-xl bg-[#07080c] border-b border-white/10 flex items-center justify-center group`}
+    >
+      {/* Ambient Radial Glow */}
+      <div className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-[#8B5CF6]/20 blur-3xl group-hover:bg-[#8B5CF6]/35 transition-all duration-500" />
+      <div className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full bg-[#00D4FF]/20 blur-3xl group-hover:bg-[#00D4FF]/35 transition-all duration-500" />
+
+      {/* Cyber Grid Lines */}
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, rgba(139,92,246,0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,212,255,0.2) 1px, transparent 1px)',
+          backgroundSize: '28px 28px'
+        }}
+      />
+
+      {/* Custom SVG Cybernetic Illustration */}
+      <div className="relative z-10 flex flex-col items-center justify-center p-4">
+        {variant === 'cyber-bot' && (
+          <svg viewBox="0 0 120 90" className="w-28 h-24 drop-shadow-[0_0_15px_rgba(0,212,255,0.45)]">
+            <rect x="26" y="20" width="68" height="48" rx="12" fill="#0d101b" stroke="#00D4FF" strokeWidth="2.2" />
+            <line x1="60" y1="8" x2="60" y2="20" stroke="#8B5CF6" strokeWidth="2.5" />
+            <circle cx="60" cy="7" r="4" fill="#8B5CF6" />
+            <circle cx="45" cy="42" r="6" fill="#00D4FF" />
+            <circle cx="75" cy="42" r="6" fill="#00D4FF" />
+            <path d="M44 56 Q60 63 76 56" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <rect x="16" y="34" width="6" height="20" rx="3" fill="#8B5CF6" />
+            <rect x="98" y="34" width="6" height="20" rx="3" fill="#8B5CF6" />
+          </svg>
+        )}
+        {variant === 'terminal-cli' && (
+          <svg viewBox="0 0 120 90" className="w-28 h-24 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]">
+            <rect x="16" y="14" width="88" height="62" rx="8" fill="#0d101b" stroke="#8B5CF6" strokeWidth="2.2" />
+            <line x1="16" y1="28" x2="104" y2="28" stroke="#8B5CF6" strokeOpacity="0.5" strokeWidth="1.5" />
+            <circle cx="25" cy="21" r="2.2" fill="#ff5f56" />
+            <circle cx="33" cy="21" r="2.2" fill="#ffbd2e" />
+            <circle cx="41" cy="21" r="2.2" fill="#27c93f" />
+            <path d="M28 42 L38 49 L28 56" stroke="#00D4FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <line x1="44" y1="56" x2="66" y2="56" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="28" y1="65" x2="84" y2="65" stroke="#ffffff" strokeOpacity="0.25" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        )}
+        {variant === 'automation-flow' && (
+          <svg viewBox="0 0 120 90" className="w-28 h-24 drop-shadow-[0_0_15px_rgba(0,212,255,0.45)]">
+            <rect x="14" y="32" width="24" height="24" rx="6" fill="#0d101b" stroke="#8B5CF6" strokeWidth="2.2" />
+            <rect x="48" y="14" width="24" height="24" rx="6" fill="#0d101b" stroke="#00D4FF" strokeWidth="2.2" />
+            <rect x="48" y="52" width="24" height="24" rx="6" fill="#0d101b" stroke="#00D4FF" strokeWidth="2.2" />
+            <rect x="82" y="32" width="24" height="24" rx="6" fill="#0d101b" stroke="#8B5CF6" strokeWidth="2.2" />
+            <path d="M38 44 L48 26 M38 44 L48 64 M72 26 L82 44 M72 64 L82 44" stroke="#00D4FF" strokeWidth="1.8" />
+            <circle cx="60" cy="26" r="3" fill="#00D4FF" />
+            <circle cx="60" cy="64" r="3" fill="#8B5CF6" />
+          </svg>
+        )}
+        {variant === 'security-shield' && (
+          <svg viewBox="0 0 120 90" className="w-28 h-24 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]">
+            <path
+              d="M60 12 L92 24 V46 C92 65 78 77 60 82 C42 77 28 65 28 46 V24 L60 12 Z"
+              fill="#0d101b"
+              stroke="url(#saviourGrad)"
+              strokeWidth="2.4"
+            />
+            <rect x="49" y="42" width="22" height="17" rx="3" fill="#8B5CF6" fillOpacity="0.25" stroke="#00D4FF" strokeWidth="2" />
+            <path d="M54 42 V36 C54 32.5 66 32.5 66 36 V42" stroke="#00D4FF" strokeWidth="2" fill="none" />
+            <circle cx="60" cy="50" r="2" fill="#00D4FF" />
+          </svg>
+        )}
+        {variant === 'macro-engine' && (
+          <svg viewBox="0 0 120 90" className="w-28 h-24 drop-shadow-[0_0_15px_rgba(0,212,255,0.45)]">
+            <circle cx="60" cy="45" r="28" fill="#0d101b" stroke="#8B5CF6" strokeWidth="2.2" strokeDasharray="6 4" />
+            <circle cx="60" cy="45" r="18" fill="none" stroke="#00D4FF" strokeWidth="2" />
+            <path d="M62 31 L52 46 H61 L58 59 L69 44 H60 L62 31 Z" fill="#00D4FF" />
+          </svg>
+        )}
+
+        <div className="mt-2 flex items-center gap-2">
+          <span className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded bg-white/5 border border-white/10 text-[#00D4FF]">
+            {category}
+          </span>
+          <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-[#8B5CF6]/15 border border-[#8B5CF6]/40 text-[#c4b5fd]">
+            {version}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// 6. MAIN APPLICATION COMPONENT
+// ============================================================================
+
+export function App() {
+  // --- Persistent State Initialization (localStorage Relational Store) ---
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('saviour_products_v1');
+      return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+    } catch {
+      return INITIAL_PRODUCTS;
+    }
+  });
+
+  const [users, setUsers] = useState<UserAccount[]>(() => {
+    try {
+      const saved = localStorage.getItem('saviour_users_v1');
+      return saved ? JSON.parse(saved) : INITIAL_USERS;
+    } catch {
+      return INITIAL_USERS;
+    }
+  });
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
+    return localStorage.getItem('saviour_session_uid_v1') || null;
+  });
+
+  const [orders, setOrders] = useState<Order[]>(() => {
+    try {
+      const saved = localStorage.getItem('saviour_orders_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [licenses, setLicenses] = useState<LicenseKey[]>(() => {
+    try {
+      const saved = localStorage.getItem('saviour_licenses_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [tickets, setTickets] = useState<SupportTicket[]>(() => {
+    try {
+      const saved = localStorage.getItem('saviour_tickets_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>(() => {
+    try {
+      const saved = localStorage.getItem('saviour_config_v1');
+      return saved ? JSON.parse(saved) : INITIAL_CONFIG;
+    } catch {
+      return INITIAL_CONFIG;
+    }
+  });
+
+  // Sync states to localStorage
+  useEffect(() => {
+    localStorage.setItem('saviour_products_v1', JSON.stringify(products));
+  }, [products]);
+  useEffect(() => {
+    localStorage.setItem('saviour_users_v1', JSON.stringify(users));
+  }, [users]);
+  useEffect(() => {
+    if (currentUserId) localStorage.setItem('saviour_session_uid_v1', currentUserId);
+    else localStorage.removeItem('saviour_session_uid_v1');
+  }, [currentUserId]);
+  useEffect(() => {
+    localStorage.setItem('saviour_orders_v1', JSON.stringify(orders));
+  }, [orders]);
+  useEffect(() => {
+    localStorage.setItem('saviour_licenses_v1', JSON.stringify(licenses));
+  }, [licenses]);
+  useEffect(() => {
+    localStorage.setItem('saviour_tickets_v1', JSON.stringify(tickets));
+  }, [tickets]);
+  useEffect(() => {
+    localStorage.setItem('saviour_config_v1', JSON.stringify(systemConfig));
+  }, [systemConfig]);
+
+  // --- Navigation & UI State ---
+  const [activeRoute, setActiveRoute] = useState<PageRoute>('HOME');
+  const [selectedProductId, setSelectedProductId] = useState<string>(INITIAL_PRODUCTS[0].id);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [discordModalOpen, setDiscordModalOpen] = useState(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+
+  // Filters on Products Page
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<'ALL' | Category>('ALL');
+  const [selectedBadgeFilter, setSelectedBadgeFilter] = useState<'ALL' | ProductBadge>('ALL');
+
+  // Auth Form State
+  const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  const [authUsername, setAuthUsername] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [pendingCheckoutAfterAuth, setPendingCheckoutAfterAuth] = useState(false);
+
+  // Checkout State
+  const [checkoutMethod, setCheckoutMethod] = useState<Order['paymentMethod']>('VIETQR_BANK');
+
+  // Account Tab State
+  const [accountTab, setAccountTab] = useState<'OVERVIEW' | 'ORDERS' | 'LICENSES' | 'DOWNLOADS'>('ORDERS');
+
+  // Admin Tab & Form States
+  const [adminTab, setAdminTab] = useState<'DASHBOARD' | 'ORDERS' | 'PRODUCTS' | 'LICENSES' | 'USERS' | 'SETTINGS'>('DASHBOARD');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+
+  // New/Edit Product Form Fields
+  const [prodForm, setProdForm] = useState<{
+    name: string;
+    category: Category;
+    badge: ProductBadge;
+    status: ProductStatus;
+    price: string;
+    version: string;
+    shortDescription: string;
+    fullDescription: string;
+    featuresText: string;
+    usageGuideText: string;
+    techStackText: string;
+    artVariant: Product['artVariant'];
+  }>({
+    name: '',
+    category: 'TOOL',
+    badge: 'NEW',
+    status: 'ACTIVE',
+    price: '250000',
+    version: 'v1.0.0',
+    shortDescription: '',
+    fullDescription: '',
+    featuresText: '',
+    usageGuideText: '',
+    techStackText: 'Python, TypeScript',
+    artVariant: 'terminal-cli'
+  });
+
+  // Support Form State
+  const [supportName, setSupportName] = useState('');
+  const [supportContact, setSupportContact] = useState('');
+  const [supportSubject, setSupportSubject] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  // Derived Current User
+  const currentUser = useMemo(
+    () => users.find((u) => u.id === currentUserId) || null,
+    [users, currentUserId]
+  );
+
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.id === selectedProductId) || products[0],
+    [products, selectedProductId]
+  );
+
+  // Toast Helper
+  const showToast = (type: ToastMessage['type'], title: string, message: string) => {
+    const id = `toast_${Date.now()}_${Math.random()}`;
+    setToasts((prev) => [...prev, { id, type, title, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  };
+
+  // Smooth Scroll on Route Change
+  const navigateTo = (route: PageRoute, productId?: string) => {
+    if (productId) setSelectedProductId(productId);
+    setActiveRoute(route);
+    setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Copy Helper
+  const handleCopyText = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKeyId(id);
+    showToast('info', 'Đã sao chép', `Đã lưu "${text}" vào bộ nhớ tạm.`);
+    setTimeout(() => setCopiedKeyId(null), 2000);
+  };
+
+  // ============================================================================
+  // 7. CORE BUSINESS LOGIC HANDLERS (Auth, Checkout, Admin Approval, Downloads)
+  // ============================================================================
+
+  const handleAuthSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (authMode === 'LOGIN') {
+      const found = users.find(
+        (u) =>
+          (u.email.toLowerCase() === authEmail.trim().toLowerCase() ||
+            u.username.toLowerCase() === authEmail.trim().toLowerCase()) &&
+          u.passwordHash === authPassword
+      );
+      if (!found) {
+        showToast('error', 'Đăng nhập thất bại', 'Email/Tên đăng nhập hoặc mật khẩu không chính xác.');
+        return;
+      }
+      setCurrentUserId(found.id);
+      showToast('success', 'Đăng nhập thành công', `Chào mừng ${found.username} quay trở lại SAVIOUR.`);
+      setAuthEmail('');
+      setAuthPassword('');
+      if (pendingCheckoutAfterAuth) {
+        setPendingCheckoutAfterAuth(false);
+        navigateTo('CHECKOUT');
+      } else {
+        navigateTo(found.role === 'ADMIN' ? 'ADMIN' : 'ACCOUNT');
+      }
+    } else {
+      if (!authUsername.trim() || !authEmail.trim() || authPassword.length < 6) {
+        showToast('warning', 'Thông tin chưa hợp lệ', 'Vui lòng nhập đầy đủ tên, email và mật khẩu tối thiểu 6 ký tự.');
+        return;
+      }
+      const exists = users.some(
+        (u) =>
+          u.email.toLowerCase() === authEmail.trim().toLowerCase() ||
+          u.username.toLowerCase() === authUsername.trim().toLowerCase()
+      );
+      if (exists) {
+        showToast('error', 'Tài khoản đã tồn tại', 'Email hoặc Username này đã được đăng ký trước đó.');
+        return;
+      }
+      const newUser: UserAccount = {
+        id: `usr_${Date.now()}`,
+        username: authUsername.trim(),
+        email: authEmail.trim(),
+        passwordHash: authPassword,
+        role: 'USER',
+        createdAt: new Date().toISOString()
+      };
+      setUsers((prev) => [...prev, newUser]);
+      setCurrentUserId(newUser.id);
+      showToast('success', 'Đăng ký hoàn tất', 'Tài khoản SAVIOUR của bạn đã được khởi tạo.');
+      setAuthUsername('');
+      setAuthEmail('');
+      setAuthPassword('');
+      if (pendingCheckoutAfterAuth) {
+        setPendingCheckoutAfterAuth(false);
+        navigateTo('CHECKOUT');
+      } else {
+        navigateTo('ACCOUNT');
+      }
+    }
+  };
+
+  const handleQuickDemoLogin = (role: UserRole) => {
+    const target = users.find((u) => u.role === role);
+    if (!target) return;
+    setCurrentUserId(target.id);
+    showToast(
+      'info',
+      `Đã đăng nhập phiên ${role}`,
+      `Đang sử dụng tài khoản ${target.username} (${target.email}).`
+    );
+    if (pendingCheckoutAfterAuth) {
+      setPendingCheckoutAfterAuth(false);
+      navigateTo('CHECKOUT');
+    } else {
+      navigateTo(role === 'ADMIN' ? 'ADMIN' : 'ACCOUNT');
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUserId(null);
+    showToast('info', 'Đã đăng xuất', 'Phiên làm việc của bạn đã được đóng an toàn.');
+    navigateTo('HOME');
+  };
+
+  const handleStartBuyProduct = (product: Product) => {
+    if (product.status !== 'ACTIVE') {
+      showToast('warning', 'Sản phẩm đang bảo trì', 'Sản phẩm này hiện đang nâng cấp hệ thống, vui lòng quay lại sau.');
+      return;
+    }
+    setSelectedProductId(product.id);
+    if (!currentUser) {
+      setPendingCheckoutAfterAuth(true);
+      showToast('info', 'Yêu cầu đăng nhập', 'Vui lòng đăng nhập hoặc tạo tài khoản để gắn License Key vào hồ sơ của bạn.');
+      navigateTo('ACCOUNT');
+      return;
+    }
+    navigateTo('CHECKOUT');
+  };
+
+  // Create Real Order in PENDING state (Strictly NO fake instant payment)
+  const handleCreateOrder = () => {
+    if (!currentUser || !selectedProduct) return;
+
+    const orderId = generateOrderId();
+    const newOrder: Order = {
+      id: orderId,
+      userId: currentUser.id,
+      username: currentUser.username,
+      userEmail: currentUser.email,
+      productId: selectedProduct.id,
+      productName: selectedProduct.name,
+      amount: selectedProduct.price,
+      paymentMethod: checkoutMethod,
+      status: 'PENDING',
+      transferNote: `SAVIOUR ${orderId.replace('ORD-', '')} ${currentUser.username.toUpperCase()}`,
+      createdAt: new Date().toISOString()
+    };
+
+    setOrders((prev) => [newOrder, ...prev]);
+    setAccountTab('ORDERS');
+    showToast(
+      'warning',
+      'Đơn hàng đã tạo (PENDING)',
+      `Mã đơn ${orderId} đang chờ xác nhận thanh toán. License Key sẽ tự động mở khóa khi trạng thái chuyển sang PAID.`
+    );
+    navigateTo('ACCOUNT');
+  };
+
+  // Admin Action: Confirm Payment (PENDING -> PAID) & Auto-Issue License Key
+  const handleAdminUpdateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (!targetOrder) return;
+
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: newStatus,
+              paidAt: newStatus === 'PAID' ? new Date().toISOString() : o.paidAt
+            }
+          : o
+      )
+    );
+
+    if (newStatus === 'PAID') {
+      // Check if license already exists for this order
+      const existingLicense = licenses.find((l) => l.orderId === orderId);
+      if (!existingLicense) {
+        const generatedKey = generateLicenseKey();
+        const newLicense: LicenseKey = {
+          id: `lic_${Date.now()}`,
+          key: generatedKey,
+          orderId: targetOrder.id,
+          userId: targetOrder.userId,
+          username: targetOrder.username,
+          productId: targetOrder.productId,
+          productName: targetOrder.productName,
+          status: 'ACTIVE',
+          expiresAt: 'LIFETIME',
+          createdAt: new Date().toISOString()
+        };
+        setLicenses((prev) => [newLicense, ...prev]);
+        showToast(
+          'success',
+          'Xác nhận PAID & Cấp License Key',
+          `Đơn ${orderId} đã thanh toán. Đã phát hành mã ${generatedKey} và mở quyền tải xuống cho ${targetOrder.username}.`
+        );
+      } else {
+        showToast('success', 'Đã cập nhật trạng thái PAID', `Đơn hàng ${orderId} đã được xác nhận.`);
+      }
+    } else if (newStatus === 'CANCELLED') {
+      showToast('error', 'Đã hủy đơn hàng', `Đơn hàng ${orderId} đã chuyển sang trạng thái CANCELLED.`);
+    }
+  };
+
+  // Download Deliverable Package (Only allowed if user has a PAID order & ACTIVE license)
+  const handleDownloadPackage = (product: Product, license: LicenseKey) => {
+    if (license.status !== 'ACTIVE') {
+      showToast('error', 'License bị thu hồi', 'Mã bản quyền này hiện không ở trạng thái ACTIVE.');
+      return;
+    }
+
+    const packageContent = `================================================================
+SAVIOUR DIGITAL SYSTEMS — OFFICIAL LICENSED PACKAGE MANIFEST
+================================================================
+Product Name   : ${product.name}
+Product ID     : ${product.id}
+Version        : ${product.version}
+Category       : ${product.category}
+Licensed To    : ${license.username}
+Order ID       : ${license.orderId}
+License Key    : ${license.key}
+License Status : ${license.status} (${license.expiresAt})
+Issued At      : ${new Date(license.createdAt).toLocaleString('vi-VN')}
+----------------------------------------------------------------
+TECH STACK:
+${product.techStack.join(' | ')}
+
+QUICK START GUIDE:
+${product.usageGuide.map((step, idx) => `${idx + 1}. ${step}`).join('\n')}
+
+SECURITY NOTICE:
+- Tuyệt đối không chia sẻ License Key công khai.
+- Hệ thống xác thực HWID sẽ liên kết khóa này với thiết bị kích hoạt đầu tiên.
+- Hỗ trợ kỹ thuật chính thức: ${systemConfig.discordInviteUrl}
+================================================================
+`;
+
+    const blob = new Blob([packageContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${product.slug}_${product.version}_LICENSED.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(
+      'success',
+      'Đang tải xuống gói phần mềm',
+      `Đã xuất gói cài đặt & cấu hình bản quyền cho ${product.name}.`
+    );
+  };
+
+  // Admin Product CRUD
+  const openCreateProductModal = () => {
+    setEditingProduct(null);
+    setProdForm({
+      name: '',
+      category: 'TOOL',
+      badge: 'NEW',
+      status: 'ACTIVE',
+      price: '290000',
+      version: 'v1.0.0',
+      shortDescription: '',
+      fullDescription: '',
+      featuresText: 'Hiệu năng cao, tối ưu tài nguyên\nBảo mật License Key HWID\nHỗ trợ cập nhật trọn đời',
+      usageGuideText: 'Tải gói cài đặt sau khi thanh toán\nNhập License Key để kích hoạt',
+      techStackText: 'TypeScript, Node.js',
+      artVariant: 'terminal-cli'
+    });
+    setIsProductModalOpen(true);
+  };
+
+  const openEditProductModal = (prod: Product) => {
+    setEditingProduct(prod);
+    setProdForm({
+      name: prod.name,
+      category: prod.category,
+      badge: prod.badge,
+      status: prod.status,
+      price: String(prod.price),
+      version: prod.version,
+      shortDescription: prod.shortDescription,
+      fullDescription: prod.fullDescription,
+      featuresText: prod.features.join('\n'),
+      usageGuideText: prod.usageGuide.join('\n'),
+      techStackText: prod.techStack.join(', '),
+      artVariant: prod.artVariant
+    });
+    setIsProductModalOpen(true);
+  };
+
+  const handleSaveProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    const numericPrice = Math.max(0, parseInt(prodForm.price, 10) || 0);
+    if (!prodForm.name.trim() || !prodForm.shortDescription.trim()) {
+      showToast('warning', 'Thiếu thông tin', 'Vui lòng nhập tên sản phẩm và mô tả ngắn.');
+      return;
+    }
+
+    const features = prodForm.featuresText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const usageGuide = prodForm.usageGuideText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const techStack = prodForm.techStackText
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (editingProduct) {
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === editingProduct.id
+            ? {
+                ...p,
+                name: prodForm.name.trim(),
+                category: prodForm.category,
+                badge: prodForm.badge,
+                status: prodForm.status,
+                price: numericPrice,
+                version: prodForm.version.trim() || 'v1.0.0',
+                shortDescription: prodForm.shortDescription.trim(),
+                fullDescription: prodForm.fullDescription.trim() || prodForm.shortDescription.trim(),
+                features: features.length ? features : ['Tính năng tiêu chuẩn SAVIOUR'],
+                usageGuide: usageGuide.length ? usageGuide : ['Liên hệ hỗ trợ để nhận hướng dẫn'],
+                techStack: techStack.length ? techStack : ['SAVIOUR Core'],
+                artVariant: prodForm.artVariant
+              }
+            : p
+        )
+      );
+      showToast('success', 'Đã cập nhật sản phẩm', `Sản phẩm "${prodForm.name}" đã được lưu.`);
+    } else {
+      const newProd: Product = {
+        id: `prod_${Date.now()}`,
+        slug: prodForm.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, ''),
+        name: prodForm.name.trim(),
+        category: prodForm.category,
+        badge: prodForm.badge,
+        status: prodForm.status,
+        price: numericPrice,
+        version: prodForm.version.trim() || 'v1.0.0',
+        shortDescription: prodForm.shortDescription.trim(),
+        fullDescription: prodForm.fullDescription.trim() || prodForm.shortDescription.trim(),
+        features: features.length ? features : ['Tính năng tiêu chuẩn SAVIOUR'],
+        usageGuide: usageGuide.length ? usageGuide : ['Tải xuống và kích hoạt bằng License Key'],
+        techStack: techStack.length ? techStack : ['SAVIOUR Core'],
+        changelog: `${prodForm.version || 'v1.0.0'}: Phát hành phiên bản mới trên hệ thống SAVIOUR.`,
+        artVariant: prodForm.artVariant,
+        createdAt: new Date().toISOString()
+      };
+      setProducts((prev) => [newProd, ...prev]);
+      showToast('success', 'Đã thêm sản phẩm mới', `Sản phẩm "${newProd.name}" đã hiển thị trên cửa hàng.`);
+    }
+    setIsProductModalOpen(false);
+  };
+
+  const handleDeleteProduct = (id: string) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    showToast('info', 'Đã xóa sản phẩm', 'Sản phẩm đã được gỡ khỏi danh mục cửa hàng.');
+  };
+
+  // Support Ticket Submission
+  const handleSupportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supportName.trim() || !supportContact.trim() || !supportMessage.trim()) {
+      showToast('warning', 'Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin liên hệ và nội dung cần hỗ trợ.');
+      return;
+    }
+    const newTicket: SupportTicket = {
+      id: `TKT-${Math.floor(1000 + Math.random() * 9000)}`,
+      name: supportName.trim(),
+      contact: supportContact.trim(),
+      subject: supportSubject.trim() || 'Hỗ trợ kỹ thuật sản phẩm SAVIOUR',
+      message: supportMessage.trim(),
+      status: 'OPEN',
+      createdAt: new Date().toISOString()
+    };
+    setTickets((prev) => [newTicket, ...prev]);
+    setSupportName('');
+    setSupportContact('');
+    setSupportSubject('');
+    setSupportMessage('');
+    showToast('success', 'Đã gửi yêu cầu hỗ trợ', `Mã Ticket ${newTicket.id} đã được lưu vào hệ thống.`);
+  };
+
+  // ============================================================================
+  // 8. COMPUTED METRICS (Strictly Honest - Derived from Real Database State)
+  // ============================================================================
+
+  const paidOrders = useMemo(() => orders.filter((o) => o.status === 'PAID'), [orders]);
+  const pendingOrders = useMemo(() => orders.filter((o) => o.status === 'PENDING'), [orders]);
+  const totalRevenue = useMemo(
+    () => paidOrders.reduce((acc, item) => acc + item.amount, 0),
+    [paidOrders]
+  );
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesCat = selectedCategory === 'ALL' || p.category === selectedCategory;
+      const matchesBadge = selectedBadgeFilter === 'ALL' || p.badge === selectedBadgeFilter;
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.shortDescription.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q);
+      return matchesCat && matchesBadge && matchesSearch;
+    });
+  }, [products, selectedCategory, selectedBadgeFilter, searchQuery]);
+
+  const userOrders = useMemo(
+    () => (currentUser ? orders.filter((o) => o.userId === currentUser.id) : []),
+    [orders, currentUser]
+  );
+
+  const userLicenses = useMemo(
+    () => (currentUser ? licenses.filter((l) => l.userId === currentUser.id) : []),
+    [licenses, currentUser]
+  );
+
+  // ============================================================================
+  // 9. UI BADGE & STATUS RENDER HELPERS
+  // ============================================================================
+
+  const renderBadge = (badge: ProductBadge) => {
+    if (badge === 'NONE') return null;
+    const styles: Record<Exclude<ProductBadge, 'NONE'>, string> = {
+      NEW: 'bg-[#00D4FF]/15 text-[#00D4FF] border-[#00D4FF]/40 shadow-[0_0_12px_rgba(0,212,255,0.25)]',
+      HOT: 'bg-rose-500/15 text-rose-400 border-rose-500/40 shadow-[0_0_12px_rgba(244,63,94,0.25)]',
+      'BEST SELLER':
+        'bg-[#8B5CF6]/20 text-[#c4b5fd] border-[#8B5CF6]/50 shadow-[0_0_12px_rgba(139,92,246,0.3)]'
+    };
+    return (
+      <span
+        className={`px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded-full border ${styles[badge]}`}
+      >
+        {badge}
+      </span>
+    );
+  };
+
+  const renderOrderStatusBadge = (status: OrderStatus) => {
+    switch (status) {
+      case 'PAID':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <CheckCircle2 className="w-3.5 h-3.5" /> PAID
+          </span>
+        );
+      case 'PENDING':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <Clock className="w-3.5 h-3.5 animate-pulse" /> PENDING
+          </span>
+        );
+      case 'CANCELLED':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+            <XCircle className="w-3.5 h-3.5" /> CANCELLED
+          </span>
+        );
+    }
+  };
+
+  // ============================================================================
+  // 10. MAIN LAYOUT & VIEWS
+  // ============================================================================
+
+  return (
+    <div className="min-h-screen bg-[#08090D] text-slate-100 font-sans selection:bg-[#8B5CF6] selection:text-white relative overflow-x-hidden">
+      {/* Animated Tech Canvas Background */}
+      <CyberBackgroundCanvas />
+
+      {/* Top Ambient Gradient Aura */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[900px] h-[340px] bg-gradient-to-b from-[#8B5CF6]/15 via-[#00D4FF]/5 to-transparent blur-3xl pointer-events-none z-0" />
+
+      {/* Toast Notification Stack */}
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full px-4 sm:px-0 pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className="pointer-events-auto backdrop-blur-xl bg-[#0e1018]/95 border border-white/15 rounded-xl p-4 shadow-[0_10px_35px_rgba(0,0,0,0.65)] flex items-start gap-3 animate-fade-in"
+          >
+            {t.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />}
+            {t.type === 'error' && <XCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />}
+            {t.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />}
+            {t.type === 'info' && <Sparkles className="w-5 h-5 text-[#00D4FF] shrink-0 mt-0.5" />}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white">{t.title}</p>
+              <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">{t.message}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Top System Announcement Bar */}
+      {systemConfig.showAnnouncement && (
+        <div className="relative z-30 bg-gradient-to-r from-[#8B5CF6]/20 via-[#0e111a] to-[#00D4FF]/20 border-b border-white/10 px-4 py-2 text-center">
+          <p className="text-[11px] sm:text-xs font-mono tracking-wider text-slate-200 flex items-center justify-center gap-2 flex-wrap">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#00D4FF] animate-ping" />
+            <span>{systemConfig.announcementBanner}</span>
+          </p>
+        </div>
+      )}
+
+      {/* ======================================================================
+          NAVIGATION HEADER
+         ====================================================================== */}
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#08090D]/80 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3.5 flex items-center justify-between gap-4">
+          {/* Brand Logo */}
+          <button
+            onClick={() => navigateTo('HOME')}
+            className="focus:outline-none text-left"
+          >
+            <SaviourLogo size="md" />
+          </button>
+
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-1 bg-white/[0.03] border border-white/10 rounded-full px-2 py-1.5">
+            {[
+              { label: 'HOME', route: 'HOME' as PageRoute },
+              { label: 'PRODUCTS', route: 'PRODUCTS' as PageRoute },
+              { label: 'SUPPORT', route: 'SUPPORT' as PageRoute },
+              { label: 'SYSTEM & DB', route: 'ARCHITECTURE' as PageRoute }
+            ].map((item) => {
+              const isActive = activeRoute === item.route;
+              return (
+                <button
+                  key={item.route}
+                  onClick={() => navigateTo(item.route)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_20px_rgba(139,92,246,0.45)]'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setDiscordModalOpen(true)}
+              className="px-4 py-1.5 rounded-full text-xs font-bold tracking-wider text-[#00D4FF] hover:bg-[#00D4FF]/10 transition-all flex items-center gap-1.5"
+            >
+              <span>DISCORD</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          </nav>
+
+          {/* Right Actions: Gateway Status + User / Admin / Login */}
+          <div className="hidden md:flex items-center gap-3">
+            {/* Payment Gateway Honest Connection Pill */}
+            <div
+              title="Trạng thái kết nối cổng thanh toán tự động"
+              className={`px-3 py-1.5 rounded-full text-[11px] font-mono border flex items-center gap-1.5 ${
+                systemConfig.paymentGatewayConnected
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  systemConfig.paymentGatewayConnected ? 'bg-emerald-400' : 'bg-amber-400'
+                }`}
+              />
+              <span>
+                {systemConfig.paymentGatewayConnected ? 'AUTO-PAY: ONLINE' : 'GATEWAY: MANUAL'}
+              </span>
+            </div>
+
+            {currentUser ? (
+              <div className="flex items-center gap-2">
+                {currentUser.role === 'ADMIN' && (
+                  <button
+                    onClick={() => navigateTo('ADMIN')}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold tracking-wider border transition-all flex items-center gap-1.5 ${
+                      activeRoute === 'ADMIN'
+                        ? 'bg-[#8B5CF6] text-white border-[#8B5CF6] shadow-[0_0_20px_rgba(139,92,246,0.5)]'
+                        : 'bg-[#8B5CF6]/15 text-[#c4b5fd] border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/25'
+                    }`}
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    <span>ADMIN</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => navigateTo('ACCOUNT')}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
+                    activeRoute === 'ACCOUNT'
+                      ? 'bg-[#00D4FF]/20 text-white border-[#00D4FF]/50'
+                      : 'bg-white/5 text-slate-200 border-white/10 hover:border-[#00D4FF]/40'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5 text-[#00D4FF]" />
+                  <span>{currentUser.username}</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigateTo('ACCOUNT')}
+                className="px-5 py-2 rounded-xl text-xs font-bold tracking-wider uppercase bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_22px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_rgba(0,212,255,0.6)] transition-all flex items-center gap-2"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>LOGIN</span>
+              </button>
+            )}
+          </div>
+
+          {/* Mobile Hamburger Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-200"
+            aria-label="Toggle Menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {/* Mobile Drawer */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-[#0b0d14]/95 backdrop-blur-xl border-b border-white/10 px-4 py-4 space-y-2">
+            {[
+              { label: 'HOME', route: 'HOME' as PageRoute },
+              { label: 'PRODUCTS', route: 'PRODUCTS' as PageRoute },
+              { label: 'SUPPORT', route: 'SUPPORT' as PageRoute },
+              { label: 'SYSTEM & DB SCHEMA', route: 'ARCHITECTURE' as PageRoute }
+            ].map((item) => (
+              <button
+                key={item.route}
+                onClick={() => navigateTo(item.route)}
+                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold tracking-wider ${
+                  activeRoute === item.route
+                    ? 'bg-gradient-to-r from-[#8B5CF6]/30 to-[#00D4FF]/20 text-white border border-[#8B5CF6]/40'
+                    : 'text-slate-300 hover:bg-white/5'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setDiscordModalOpen(true);
+              }}
+              className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold tracking-wider text-[#00D4FF] hover:bg-white/5 flex items-center justify-between"
+            >
+              <span>JOIN DISCORD COMMUNITY</span>
+              <ExternalLink className="w-4 h-4" />
+            </button>
+
+            <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
+              {currentUser ? (
+                <>
+                  <button
+                    onClick={() => navigateTo('ACCOUNT')}
+                    className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-white flex items-center justify-between"
+                  >
+                    <span>Tài khoản: {currentUser.username}</span>
+                    <ChevronRight className="w-4 h-4 text-[#00D4FF]" />
+                  </button>
+                  {currentUser.role === 'ADMIN' && (
+                    <button
+                      onClick={() => navigateTo('ADMIN')}
+                      className="w-full py-3 px-4 rounded-xl bg-[#8B5CF6] text-sm font-bold text-white flex items-center justify-between"
+                    >
+                      <span>ADMIN DASHBOARD</span>
+                      <LayoutDashboard className="w-4 h-4" />
+                    </button>
+                  )}
+                </>
+              ) : (
+                <button
+                  onClick={() => navigateTo('ACCOUNT')}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-sm font-bold text-white"
+                >
+                  LOGIN / ĐĂNG KÝ
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ======================================================================
+          MAIN CONTENT ROUTER
+         ====================================================================== */}
+      <main className="relative z-10">
+        {/* --------------------------------------------------------------------
+            VIEW 1: HOME PAGE
+           -------------------------------------------------------------------- */}
+        {activeRoute === 'HOME' && (
+          <div>
+            {/* HERO SECTION */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 sm:pt-24 sm:pb-28 text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/35 text-xs font-mono text-[#c4b5fd] mb-8 shadow-[0_0_25px_rgba(139,92,246,0.2)]">
+                <Cpu className="w-3.5 h-3.5 text-[#00D4FF]" />
+                <span>NEXT-GEN SOFTWARE ENGINEERING • SAVIOUR STUDIO</span>
+              </div>
+
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.08] max-w-5xl mx-auto">
+                POWER YOUR{' '}
+                <span className="bg-gradient-to-r from-[#8B5CF6] via-[#a78bfa] to-[#00D4FF] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(139,92,246,0.35)]">
+                  DIGITAL WORLD
+                </span>
+              </h1>
+
+              <p className="mt-6 text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-light tracking-wide">
+                Premium Tools. Powerful Bots. Built Beyond Limits.
+              </p>
+              <p className="mt-3 text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+                Hệ sinh thái phần mềm tự động hóa, Discord Bot hiệu năng cao, Script bảo mật và tiện ích tối ưu hệ thống được phát triển độc quyền bởi SAVIOUR.
+              </p>
+
+              {/* Two Primary CTAs */}
+              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button
+                  onClick={() => navigateTo('PRODUCTS')}
+                  className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-sm tracking-wider uppercase bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_30px_rgba(139,92,246,0.5)] hover:shadow-[0_0_42px_rgba(0,212,255,0.65)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5"
+                >
+                  <span>EXPLORE PRODUCTS</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setDiscordModalOpen(true)}
+                  className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-sm tracking-wider uppercase bg-[#0f111a]/80 backdrop-blur-md border border-[#00D4FF]/40 text-[#00D4FF] hover:bg-[#00D4FF]/10 hover:border-[#00D4FF] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>JOIN DISCORD</span>
+                </button>
+              </div>
+
+              {/* LIVE METRICS (100% Real Computed Data - Zero Fake Inflation) */}
+              <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <div className="backdrop-blur-md bg-[#0f111a]/70 border border-white/10 rounded-2xl p-6 hover:border-[#8B5CF6]/50 transition-all">
+                  <div className="text-xs font-mono uppercase tracking-widest text-slate-400">
+                    SẢN PHẨM ĐANG PHÁT HÀNH
+                  </div>
+                  <div className="mt-2 text-3xl sm:text-4xl font-black text-white">
+                    {products.length}
+                  </div>
+                  <div className="mt-1 text-[11px] text-[#00D4FF] font-mono">
+                    Dữ liệu thực tế từ danh mục
+                  </div>
+                </div>
+
+                <div className="backdrop-blur-md bg-[#0f111a]/70 border border-white/10 rounded-2xl p-6 hover:border-[#00D4FF]/50 transition-all">
+                  <div className="text-xs font-mono uppercase tracking-widest text-slate-400">
+                    TÀI KHOẢN THÀNH VIÊN
+                  </div>
+                  <div className="mt-2 text-3xl sm:text-4xl font-black text-white">
+                    {users.length}
+                  </div>
+                  <div className="mt-1 text-[11px] text-[#c4b5fd] font-mono">
+                    Đã xác thực trên hệ thống
+                  </div>
+                </div>
+
+                <div className="backdrop-blur-md bg-[#0f111a]/70 border border-white/10 rounded-2xl p-6 hover:border-[#8B5CF6]/50 transition-all">
+                  <div className="text-xs font-mono uppercase tracking-widest text-slate-400">
+                    GIAO DỊCH HOÀN TẤT (PAID)
+                  </div>
+                  <div className="mt-2 text-3xl sm:text-4xl font-black text-white">
+                    {paidOrders.length}
+                  </div>
+                  <div className="mt-1 text-[11px] text-emerald-400 font-mono">
+                    {pendingOrders.length > 0
+                      ? `+${pendingOrders.length} đơn đang chờ duyệt`
+                      : 'Không tạo số liệu ảo'}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* FEATURED PRODUCTS SECTION */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-white/5">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+                <div>
+                  <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#00D4FF]">
+                    // FEATURED RELEASES
+                  </span>
+                  <h2 className="mt-2 text-2xl sm:text-4xl font-black text-white">
+                    Sản Phẩm Kỹ Thuật Số Nổi Bật
+                  </h2>
+                </div>
+                <button
+                  onClick={() => navigateTo('PRODUCTS')}
+                  className="inline-flex items-center gap-2 text-sm font-bold text-[#c4b5fd] hover:text-[#00D4FF] transition-colors"
+                >
+                  <span>Xem toàn bộ kho phần mềm</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.slice(0, 3).map((product) => (
+                  <div
+                    key={product.id}
+                    className="group backdrop-blur-md bg-[#0f111a]/75 border border-white/10 rounded-2xl overflow-hidden hover:border-[#8B5CF6]/60 hover:shadow-[0_0_35px_rgba(139,92,246,0.2)] transition-all duration-300 flex flex-col"
+                  >
+                    <div className="relative">
+                      <ProductArtBanner
+                        variant={product.artVariant}
+                        category={product.category}
+                        version={product.version}
+                        compact
+                      />
+                      <div className="absolute top-3 left-3 flex items-center gap-2">
+                        {renderBadge(product.badge)}
+                      </div>
+                      <div className="absolute top-3 right-3">
+                        <span
+                          className={`px-2 py-0.5 text-[10px] font-mono rounded border ${
+                            product.status === 'ACTIVE'
+                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                              : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                          }`}
+                        >
+                          {product.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-6 flex-1 flex flex-col">
+                      <h3 className="text-lg font-bold text-white group-hover:text-[#00D4FF] transition-colors line-clamp-1">
+                        {product.name}
+                      </h3>
+                      <p className="mt-2 text-xs sm:text-sm text-slate-400 line-clamp-2 leading-relaxed flex-1">
+                        {product.shortDescription}
+                      </p>
+
+                      <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+                        <div>
+                          <span className="text-[10px] uppercase font-mono text-slate-500 block">
+                            Bản quyền vĩnh viễn
+                          </span>
+                          <span className="text-lg font-black text-white">
+                            {formatVND(product.price)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => navigateTo('PRODUCT_DETAIL', product.id)}
+                          className="px-4 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase bg-white/5 hover:bg-gradient-to-r hover:from-[#8B5CF6] hover:to-[#00D4FF] text-white border border-white/10 hover:border-transparent transition-all"
+                        >
+                          Xem chi tiết
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* ABOUT SAVIOUR BRAND IDENTITY */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-white/5">
+              <div className="backdrop-blur-xl bg-gradient-to-br from-[#0f111a]/90 via-[#0b0d14]/90 to-[#141026]/80 border border-white/10 rounded-3xl p-8 sm:p-12 relative overflow-hidden">
+                <div className="absolute -right-24 -top-24 w-80 h-80 rounded-full bg-[#8B5CF6]/15 blur-3xl pointer-events-none" />
+                <div className="absolute -left-24 -bottom-24 w-80 h-80 rounded-full bg-[#00D4FF]/15 blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                  <div className="lg:col-span-7 space-y-5">
+                    <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#8B5CF6]">
+                      // ARCHITECTURAL PHILOSOPHY
+                    </span>
+                    <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
+                      Tại sao các Developer & Operator chọn{' '}
+                      <span className="text-[#00D4FF]">SAVIOUR</span>?
+                    </h2>
+                    <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                      Mỗi dòng mã tại SAVIOUR đều được thiết kế theo tiêu chuẩn hiệu năng thực chiến: tối ưu tài nguyên phần cứng, bảo mật bản quyền bằng chuẩn mã hóa bất đối xứng và minh bạch tuyệt đối trong quy trình vận hành.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+                        <Shield className="w-6 h-6 text-[#8B5CF6] mb-2" />
+                        <h4 className="font-bold text-white text-sm">Bảo mật License & HWID</h4>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Cấp phát mã khóa định dạng Key_XXXXX gắn liền với tài khoản sở hữu sau khi xác nhận thanh toán.
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+                        <Zap className="w-6 h-6 text-[#00D4FF] mb-2" />
+                        <h4 className="font-bold text-white text-sm">Hiệu năng tối đa</h4>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Kiến trúc bất đồng bộ, độ trễ thấp, tương thích tốt từ Termux di động đến máy chủ Linux/Windows.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-5">
+                    <div className="rounded-2xl bg-[#07080c] border border-white/10 p-5 font-mono text-xs text-slate-300 shadow-2xl">
+                      <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                        </div>
+                        <span className="text-[10px] text-slate-500">saviour-core-verify.ts</span>
+                      </div>
+                      <pre className="overflow-x-auto leading-relaxed text-[11px] sm:text-xs">
+                        <code>
+                          <span className="text-[#8B5CF6]">const</span> session ={' '}
+                          <span className="text-[#00D4FF]">await</span> SaviourSDK.init({'{'}
+                          {'\n'}  brand: <span className="text-emerald-400">"SAVIOUR"</span>,
+                          {'\n'}  license: <span className="text-amber-300">"Key_9X4K2-M8P1Q-7Z3W9"</span>,
+                          {'\n'}  hwidBinding: <span className="text-[#8B5CF6]">true</span>,
+                          {'\n'}  antiTamper: <span className="text-[#8B5CF6]">true</span>
+                          {'\n'}{'}'});
+                          {'\n\n'}
+                          <span className="text-slate-500">// Verified runtime integrity</span>
+                          {'\n'}console.log(session.status);{' '}
+                          <span className="text-emerald-400">// "AUTHORIZED"</span>
+                        </code>
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* --------------------------------------------------------------------
+            VIEW 2: PRODUCTS CATALOG PAGE
+           -------------------------------------------------------------------- */}
+        {activeRoute === 'PRODUCTS' && (
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="mb-10">
+              <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#00D4FF]">
+                // DIGITAL ARSENAL
+              </span>
+              <h1 className="mt-2 text-3xl sm:text-5xl font-black text-white">
+                Kho Sản Phẩm Kỹ Thuật Số
+              </h1>
+              <p className="mt-2 text-sm text-slate-400">
+                Lựa chọn công cụ phù hợp cho nhu cầu tự động hóa, quản trị Discord và phát triển phần mềm.
+              </p>
+            </div>
+
+            {/* Search & Filter Control Bar */}
+            <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-4 sm:p-5 mb-8 space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                {/* Search Input */}
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Tìm kiếm Tool, Discord Bot, Script, Automation..."
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#00D4FF] transition-colors"
+                  />
+                </div>
+
+                {/* Badge Filter */}
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-[#8B5CF6] shrink-0" />
+                  <select
+                    value={selectedBadgeFilter}
+                    onChange={(e) => setSelectedBadgeFilter(e.target.value as 'ALL' | ProductBadge)}
+                    className="px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-slate-200 focus:outline-none focus:border-[#8B5CF6]"
+                  >
+                    <option value="ALL">Tất cả nhãn (ALL)</option>
+                    <option value="NEW">NEW</option>
+                    <option value="HOT">HOT</option>
+                    <option value="BEST SELLER">BEST SELLER</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Category Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {(['ALL', 'TOOL', 'DISCORD BOT', 'SCRIPT', 'AUTOMATION', 'UTILITIES'] as const).map(
+                  (cat) => {
+                    const active = selectedCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wider uppercase whitespace-nowrap transition-all ${
+                          active
+                            ? 'bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_18px_rgba(139,92,246,0.4)]'
+                            : 'bg-white/[0.04] text-slate-400 hover:text-white border border-white/10'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+
+            {/* Product Grid */}
+            {filteredProducts.length === 0 ? (
+              <div className="backdrop-blur-md bg-[#0f111a]/70 border border-white/10 rounded-2xl p-12 text-center">
+                <p className="text-slate-300 font-semibold">
+                  Không tìm thấy sản phẩm nào khớp với bộ lọc hiện tại.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('ALL');
+                    setSelectedBadgeFilter('ALL');
+                  }}
+                  className="mt-4 px-5 py-2.5 rounded-xl bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 text-xs font-bold text-[#c4b5fd]"
+                >
+                  Đặt lại bộ lọc
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="group backdrop-blur-md bg-[#0f111a]/75 border border-white/10 rounded-2xl overflow-hidden hover:border-[#00D4FF]/60 hover:shadow-[0_0_35px_rgba(0,212,255,0.18)] transition-all duration-300 flex flex-col"
+                  >
+                    <div className="relative">
+                      <ProductArtBanner
+                        variant={product.artVariant}
+                        category={product.category}
+                        version={product.version}
+                        compact
+                      />
+                      <div className="absolute top-3 left-3 flex items-center gap-2">
+                        {renderBadge(product.badge)}
+                      </div>
+                      <div className="absolute top-3 right-3">
+                        <span
+                          className={`px-2 py-0.5 text-[10px] font-mono rounded border ${
+                            product.status === 'ACTIVE'
+                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                              : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                          }`}
+                        >
+                          {product.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-6 flex-1 flex flex-col">
+                      <h3 className="text-lg font-bold text-white group-hover:text-[#00D4FF] transition-colors">
+                        {product.name}
+                      </h3>
+                      <p className="mt-2 text-xs sm:text-sm text-slate-400 line-clamp-3 leading-relaxed flex-1">
+                        {product.shortDescription}
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap gap-1.5">
+                        {product.techStack.map((tech) => (
+                          <span
+                            key={tech}
+                            className="px-2 py-0.5 text-[10px] font-mono rounded bg-white/5 text-slate-300 border border-white/10"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+                        <div>
+                          <span className="text-[10px] uppercase font-mono text-slate-500 block">
+                            Giá niêm yết
+                          </span>
+                          <span className="text-lg font-black text-white">
+                            {formatVND(product.price)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => navigateTo('PRODUCT_DETAIL', product.id)}
+                          className="px-4 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase bg-gradient-to-r from-[#8B5CF6]/80 to-[#00D4FF]/80 hover:from-[#8B5CF6] hover:to-[#00D4FF] text-white transition-all"
+                        >
+                          Xem chi tiết
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* --------------------------------------------------------------------
+            VIEW 3: PRODUCT DETAIL PAGE
+           -------------------------------------------------------------------- */}
+        {activeRoute === 'PRODUCT_DETAIL' && selectedProduct && (
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mb-6">
+              <button onClick={() => navigateTo('HOME')} className="hover:text-white">
+                HOME
+              </button>
+              <ChevronRight className="w-3.5 h-3.5" />
+              <button onClick={() => navigateTo('PRODUCTS')} className="hover:text-white">
+                PRODUCTS
+              </button>
+              <ChevronRight className="w-3.5 h-3.5" />
+              <span className="text-[#00D4FF] truncate">{selectedProduct.name}</span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left Column: Preview & Technical Docs */}
+              <div className="lg:col-span-8 space-y-6">
+                <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl overflow-hidden">
+                  <ProductArtBanner
+                    variant={selectedProduct.artVariant}
+                    category={selectedProduct.category}
+                    version={selectedProduct.version}
+                  />
+                  <div className="p-6 sm:p-8">
+                    <div className="flex flex-wrap items-center gap-2.5 mb-4">
+                      {renderBadge(selectedProduct.badge)}
+                      <span className="px-2.5 py-0.5 text-xs font-mono rounded bg-[#8B5CF6]/15 text-[#c4b5fd] border border-[#8B5CF6]/30">
+                        Phiên bản: {selectedProduct.version}
+                      </span>
+                      <span className="px-2.5 py-0.5 text-xs font-mono rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        Trạng thái: {selectedProduct.status}
+                      </span>
+                    </div>
+
+                    <h1 className="text-2xl sm:text-4xl font-black text-white">
+                      {selectedProduct.name}
+                    </h1>
+                    <p className="mt-4 text-sm sm:text-base text-slate-300 leading-relaxed">
+                      {selectedProduct.fullDescription}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Features List */}
+                <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6 sm:p-8">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-5">
+                    <Sparkles className="w-5 h-5 text-[#00D4FF]" />
+                    <span>Tính Năng Nổi Bật</span>
+                  </h2>
+                  <ul className="space-y-3">
+                    {selectedProduct.features.map((feat, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm text-slate-200">
+                        <CheckCircle2 className="w-4 h-4 text-[#00D4FF] shrink-0 mt-0.5" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Usage Guide */}
+                <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6 sm:p-8">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-5">
+                    <Terminal className="w-5 h-5 text-[#8B5CF6]" />
+                    <span>Hướng Dẫn Cài Đặt & Sử Dụng</span>
+                  </h2>
+                  <div className="space-y-3">
+                    {selectedProduct.usageGuide.map((step, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#08090D] border border-white/10"
+                      >
+                        <span className="w-6 h-6 rounded-lg bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 text-[#c4b5fd] font-mono text-xs font-bold flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <p className="text-sm text-slate-300 leading-relaxed">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Changelog & Support Info */}
+                <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6 sm:p-8">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-3">
+                    <RefreshCw className="w-5 h-5 text-emerald-400" />
+                    <span>Thông Tin Cập Nhật & Hỗ Trợ</span>
+                  </h2>
+                  <p className="text-xs font-mono text-[#00D4FF] bg-[#08090D] p-3.5 rounded-xl border border-white/10">
+                    {selectedProduct.changelog}
+                  </p>
+                  <p className="mt-3 text-xs text-slate-400 leading-relaxed">
+                    Khách hàng sở hữu bản quyền hợp lệ được miễn phí cập nhật các bản vá lỗi và hỗ trợ kỹ thuật 1-1 qua kênh Discord chính thức của SAVIOUR.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Sticky Purchase Card */}
+              <div className="lg:col-span-4">
+                <div className="sticky top-24 backdrop-blur-xl bg-[#0f111a]/90 border border-[#8B5CF6]/40 rounded-2xl p-6 shadow-[0_0_40px_rgba(139,92,246,0.15)] space-y-6">
+                  <div>
+                    <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                      Gói Bản Quyền Chính Thức
+                    </span>
+                    <div className="mt-2 text-3xl sm:text-4xl font-black text-white">
+                      {formatVND(selectedProduct.price)}
+                    </div>
+                    <p className="mt-1 text-xs text-emerald-400 font-mono">
+                      ✓ Cấp License Key định dạng Key_XXXXX
+                    </p>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-slate-300 border-y border-white/10 py-4">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Danh mục:</span>
+                      <span className="font-mono text-white">{selectedProduct.category}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Phiên bản:</span>
+                      <span className="font-mono text-[#00D4FF]">{selectedProduct.version}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Thời hạn Key:</span>
+                      <span className="font-mono text-white">LIFETIME</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Cổng thanh toán:</span>
+                      <span className="font-mono text-amber-300">
+                        {systemConfig.paymentGatewayConnected ? 'Tự động' : 'Xác nhận thủ công'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleStartBuyProduct(selectedProduct)}
+                    className="w-full py-4 rounded-xl font-black text-sm tracking-wider uppercase bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_28px_rgba(139,92,246,0.5)] hover:shadow-[0_0_38px_rgba(0,212,255,0.65)] transition-all flex items-center justify-center gap-2"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>BUY NOW</span>
+                  </button>
+
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-200/90 leading-relaxed">
+                    <strong>Lưu ý minh bạch:</strong> Sau khi đặt hàng, đơn sẽ ở trạng thái{' '}
+                    <code className="font-mono font-bold">PENDING</code>. Quyền tải xuống và License Key chỉ mở khóa sau khi giao dịch được xác nhận{' '}
+                    <code className="font-mono font-bold">PAID</code>.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* --------------------------------------------------------------------
+            VIEW 4: CHECKOUT PAGE (Honest Payment Flow - No Fake Success)
+           -------------------------------------------------------------------- */}
+        {activeRoute === 'CHECKOUT' && selectedProduct && currentUser && (
+          <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <button
+              onClick={() => navigateTo('PRODUCT_DETAIL', selectedProduct.id)}
+              className="text-xs font-mono text-slate-400 hover:text-white mb-6 inline-flex items-center gap-1"
+            >
+              ← Quay lại chi tiết sản phẩm
+            </button>
+
+            <div className="backdrop-blur-xl bg-[#0f111a]/90 border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+                <div>
+                  <span className="text-xs font-mono text-[#00D4FF] uppercase tracking-widest">
+                    // SECURE ORDER INITIALIZATION
+                  </span>
+                  <h1 className="text-2xl sm:text-3xl font-black text-white mt-1">
+                    Xác Nhận Đơn Hàng
+                  </h1>
+                </div>
+                <span className="px-3 py-1.5 rounded-full text-xs font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 self-start">
+                  Trạng thái khởi tạo: PENDING
+                </span>
+              </div>
+
+              {/* Payment Gateway Connection Warning Banner */}
+              {!systemConfig.paymentGatewayConnected && (
+                <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/35 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-100 leading-relaxed">
+                    <p className="font-bold text-amber-300">
+                      Trạng thái cổng thanh toán tự động: CHƯA KẾT NỐI API WEBHOOK
+                    </p>
+                    <p className="mt-1">
+                      Hệ thống hiện không giả lập thanh toán thành công tức thì. Khi bạn nhấn{' '}
+                      <strong>TẠO ĐƠN HÀNG (PENDING)</strong>, đơn hàng sẽ được ghi nhận vào cơ sở dữ liệu và chờ Quản trị viên kiểm tra giao dịch thực tế để kích hoạt trạng thái{' '}
+                      <code className="font-mono font-bold">PAID</code> + cấp License Key.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Order Summary */}
+              <div className="mt-6 p-5 rounded-2xl bg-[#08090D] border border-white/10 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Sản phẩm:</span>
+                  <span className="font-bold text-white">{selectedProduct.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Phiên bản:</span>
+                  <span className="font-mono text-[#00D4FF]">{selectedProduct.version}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Tài khoản nhận License:</span>
+                  <span className="font-mono text-white">
+                    {currentUser.username} ({currentUser.email})
+                  </span>
+                </div>
+                <div className="pt-3 border-t border-white/10 flex justify-between items-center">
+                  <span className="text-sm font-bold text-slate-300">Tổng thanh toán:</span>
+                  <span className="text-2xl font-black text-[#00D4FF]">
+                    {formatVND(selectedProduct.price)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Vietnamese Payment Methods */}
+              <div className="mt-6">
+                <label className="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-3">
+                  Chọn phương thức thanh toán tại Việt Nam
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    {
+                      id: 'VIETQR_BANK' as const,
+                      title: 'Chuyển khoản VietQR',
+                      desc: 'Ngân hàng nội địa 24/7'
+                    },
+                    {
+                      id: 'MOMO_MANUAL' as const,
+                      title: 'Ví điện tử MoMo',
+                      desc: 'Chuyển khoản qua SĐT/QR'
+                    },
+                    {
+                      id: 'PAYOS_GATEWAY' as const,
+                      title: 'PayOS / SePay API',
+                      desc: systemConfig.paymentGatewayConnected
+                        ? 'Webhook tự động'
+                        : 'Chưa cấu hình API'
+                    }
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setCheckoutMethod(m.id)}
+                      className={`p-4 rounded-xl border text-left transition-all ${
+                        checkoutMethod === m.id
+                          ? 'bg-[#8B5CF6]/15 border-[#8B5CF6] text-white shadow-[0_0_20px_rgba(139,92,246,0.25)]'
+                          : 'bg-[#08090D] border-white/10 text-slate-400 hover:border-white/25'
+                      }`}
+                    >
+                      <div className="text-sm font-bold text-white">{m.title}</div>
+                      <div className="text-[11px] font-mono mt-1 text-slate-400">{m.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bank Transfer Instructions */}
+              <div className="mt-6 p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2 text-xs">
+                <div className="font-bold text-white flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-[#00D4FF]" />
+                  <span>Thông tin nhận thanh toán cấu hình hiện tại:</span>
+                </div>
+                <p className="text-slate-300">
+                  Ngân hàng: <strong className="text-white">{systemConfig.bankName}</strong>
+                </p>
+                <p className="text-slate-300">
+                  Số tài khoản:{' '}
+                  <strong className="font-mono text-[#00D4FF]">
+                    {systemConfig.bankAccountNumber}
+                  </strong>
+                </p>
+                <p className="text-slate-300">
+                  Chủ tài khoản: <strong className="text-white">{systemConfig.bankAccountOwner}</strong>
+                </p>
+              </div>
+
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleCreateOrder}
+                  className="flex-1 py-4 px-6 rounded-xl font-black text-sm tracking-wider uppercase bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_25px_rgba(139,92,246,0.45)] hover:shadow-[0_0_35px_rgba(0,212,255,0.6)] transition-all"
+                >
+                  TẠO ĐƠN HÀNG (TRẠNG THÁI PENDING)
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* --------------------------------------------------------------------
+            VIEW 5: USER ACCOUNT & AUTHENTICATION SYSTEM
+           -------------------------------------------------------------------- */}
+        {activeRoute === 'ACCOUNT' && (
+          <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {!currentUser ? (
+              /* LOGIN & REGISTER VIEW */
+              <div className="max-w-md mx-auto backdrop-blur-xl bg-[#0f111a]/85 border border-white/10 rounded-3xl p-8 shadow-2xl">
+                <div className="text-center mb-6">
+                  <SaviourLogo size="md" />
+                  <h1 className="mt-4 text-2xl font-black text-white">
+                    {authMode === 'LOGIN' ? 'Đăng Nhập Hệ Thống' : 'Đăng Ký Tài Khoản'}
+                  </h1>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Quản lý đơn hàng, License Key và tải xuống phần mềm bản quyền.
+                  </p>
+                </div>
+
+                {/* Auth Mode Switcher */}
+                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#08090D] border border-white/10 mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('LOGIN')}
+                    className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                      authMode === 'LOGIN'
+                        ? 'bg-[#8B5CF6] text-white'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    ĐĂNG NHẬP
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('REGISTER')}
+                    className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                      authMode === 'REGISTER'
+                        ? 'bg-[#8B5CF6] text-white'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    ĐĂNG KÝ
+                  </button>
+                </div>
+
+                <form onSubmit={handleAuthSubmit} className="space-y-4">
+                  {authMode === 'REGISTER' && (
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                        USERNAME
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={authUsername}
+                        onChange={(e) => setAuthUsername(e.target.value)}
+                        placeholder="vd: cyber_dev"
+                        className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white focus:outline-none focus:border-[#00D4FF]"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                      {authMode === 'LOGIN' ? 'EMAIL HOẶC USERNAME' : 'EMAIL'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      placeholder="operator@saviour.dev"
+                      className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white focus:outline-none focus:border-[#00D4FF]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                      MẬT KHẨU
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white focus:outline-none focus:border-[#00D4FF]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_24px_rgba(139,92,246,0.4)] hover:shadow-[0_0_32px_rgba(0,212,255,0.6)] transition-all"
+                  >
+                    {authMode === 'LOGIN' ? 'ĐĂNG NHẬP NGAY' : 'TẠO TÀI KHOẢN'}
+                  </button>
+                </form>
+
+                {/* Quick Access Helper for Testing Role-Based Flows */}
+                <div className="mt-6 pt-5 border-t border-white/10">
+                  <p className="text-[11px] font-mono text-slate-400 text-center mb-3">
+                    TRUY CẬP NHANH KIỂM THỬ PHÂN QUYỀN:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDemoLogin('USER')}
+                      className="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-200 transition-all"
+                    >
+                      Khách hàng Demo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDemoLogin('ADMIN')}
+                      className="py-2.5 px-3 rounded-xl bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/25 border border-[#8B5CF6]/40 text-xs font-semibold text-[#c4b5fd] transition-all"
+                    >
+                      Quản trị Admin
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* LOGGED-IN USER DASHBOARD */
+              <div className="space-y-8">
+                {/* Profile Header Card */}
+                <div className="backdrop-blur-xl bg-[#0f111a]/85 border border-white/10 rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#8B5CF6] to-[#00D4FF] flex items-center justify-center text-white font-black text-xl shadow-[0_0_25px_rgba(139,92,246,0.4)]">
+                      {currentUser.username.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h1 className="text-xl sm:text-2xl font-black text-white">
+                          {currentUser.username}
+                        </h1>
+                        <span
+                          className={`px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-full border ${
+                            currentUser.role === 'ADMIN'
+                              ? 'bg-[#8B5CF6]/20 text-[#c4b5fd] border-[#8B5CF6]/50'
+                              : 'bg-[#00D4FF]/15 text-[#00D4FF] border-[#00D4FF]/40'
+                          }`}
+                        >
+                          {currentUser.role}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{currentUser.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    {currentUser.role === 'ADMIN' && (
+                      <button
+                        onClick={() => navigateTo('ADMIN')}
+                        className="px-4 py-2.5 rounded-xl bg-[#8B5CF6] text-white text-xs font-bold tracking-wider uppercase flex items-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.4)]"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        <span>Vào Trang Quản Trị Admin</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                      className="px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-2 transition-all"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Account Navigation Tabs */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  {[
+                    { id: 'ORDERS' as const, label: `Lịch sử đơn hàng (${userOrders.length})`, icon: ShoppingCart },
+                    { id: 'LICENSES' as const, label: `Quản lý License Key (${userLicenses.length})`, icon: Key },
+                    { id: 'DOWNLOADS' as const, label: `Tải xuống sản phẩm (${userLicenses.length})`, icon: Download },
+                    { id: 'OVERVIEW' as const, label: 'Hồ sơ cá nhân', icon: User }
+                  ].map((tab) => {
+                    const Icon = tab.icon;
+                    const active = accountTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setAccountTab(tab.id)}
+                        className={`px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
+                          active
+                            ? 'bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_20px_rgba(139,92,246,0.35)]'
+                            : 'bg-[#0f111a]/80 text-slate-400 hover:text-white border border-white/10'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Tab 1: Purchase History */}
+                {accountTab === 'ORDERS' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                    <h2 className="text-lg font-bold text-white mb-4">Lịch Sử Mua Hàng</h2>
+                    {userOrders.length === 0 ? (
+                      <div className="text-center py-10">
+                        <p className="text-sm text-slate-400">Bạn chưa có đơn hàng nào.</p>
+                        <button
+                          onClick={() => navigateTo('PRODUCTS')}
+                          className="mt-4 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-xs font-bold text-white"
+                        >
+                          Khám phá sản phẩm ngay
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {userOrders.map((ord) => (
+                          <div
+                            key={ord.id}
+                            className="p-5 rounded-2xl bg-[#08090D] border border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex flex-wrap items-center gap-2.5">
+                                <span className="font-mono text-xs font-bold text-[#00D4FF]">
+                                  {ord.id}
+                                </span>
+                                {renderOrderStatusBadge(ord.status)}
+                                <span className="text-[11px] font-mono text-slate-500">
+                                  {new Date(ord.createdAt).toLocaleString('vi-VN')}
+                                </span>
+                              </div>
+                              <h3 className="text-base font-bold text-white">{ord.productName}</h3>
+                              <p className="text-xs font-mono text-slate-400">
+                                Nội dung CK:{' '}
+                                <span className="text-slate-200">{ord.transferNote}</span>
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                              <div className="text-left sm:text-right">
+                                <div className="text-lg font-black text-white">
+                                  {formatVND(ord.amount)}
+                                </div>
+                                <div className="text-[11px] font-mono text-slate-400">
+                                  {ord.paymentMethod}
+                                </div>
+                              </div>
+
+                              {ord.status === 'PENDING' && (
+                                <div className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200 max-w-xs">
+                                  Đang chờ xác nhận thanh toán. License Key sẽ tự động mở khóa khi chuyển sang <strong>PAID</strong>.
+                                </div>
+                              )}
+                              {ord.status === 'PAID' && (
+                                <button
+                                  onClick={() => setAccountTab('LICENSES')}
+                                  className="px-4 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold hover:bg-emerald-500/30 transition-all"
+                                >
+                                  Xem License Key →
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 2: License Key Manager */}
+                {accountTab === 'LICENSES' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                    <h2 className="text-lg font-bold text-white mb-4">Quản Lý License Key</h2>
+                    {userLicenses.length === 0 ? (
+                      <div className="text-center py-10 text-sm text-slate-400">
+                        Chưa có License Key nào được cấp. Key chỉ được phát hành sau khi đơn hàng đạt trạng thái <strong className="text-emerald-400">PAID</strong>.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {userLicenses.map((lic) => (
+                          <div
+                            key={lic.id}
+                            className="p-5 rounded-2xl bg-[#08090D] border border-[#8B5CF6]/35 space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-mono text-slate-400">
+                                Đơn: {lic.orderId}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded ${
+                                  lic.status === 'ACTIVE'
+                                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                                }`}
+                              >
+                                {lic.status}
+                              </span>
+                            </div>
+                            <h3 className="font-bold text-white text-sm">{lic.productName}</h3>
+
+                            <div className="p-3 rounded-xl bg-[#0f111a] border border-white/10 flex items-center justify-between gap-2">
+                              <code className="font-mono text-xs sm:text-sm font-bold text-[#00D4FF] select-all">
+                                {lic.key}
+                              </code>
+                              <button
+                                onClick={() => handleCopyText(lic.key, lic.id)}
+                                className="p-2 rounded-lg bg-white/5 hover:bg-white/15 text-slate-200 transition-colors"
+                                title="Sao chép License Key"
+                              >
+                                {copiedKeyId === lic.id ? (
+                                  <Check className="w-4 h-4 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-4 h-4" />
+                                )}
+                              </button>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                              <span>Thời hạn: {lic.expiresAt}</span>
+                              <span>Cấp ngày: {new Date(lic.createdAt).toLocaleDateString('vi-VN')}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 3: Downloads Center */}
+                {accountTab === 'DOWNLOADS' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                    <h2 className="text-lg font-bold text-white mb-4">
+                      Trung Tâm Tải Xuống Phần Mềm Đã Sở Hữu
+                    </h2>
+                    {userLicenses.length === 0 ? (
+                      <div className="text-center py-10 text-sm text-slate-400">
+                        Bạn chưa sở hữu gói phần mềm nào đã kích hoạt bản quyền.
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {userLicenses.map((lic) => {
+                          const prod = products.find((p) => p.id === lic.productId);
+                          if (!prod) return null;
+                          return (
+                            <div
+                              key={lic.id}
+                              className="p-5 rounded-2xl bg-[#08090D] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                            >
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-[#00D4FF]/15 text-[#00D4FF]">
+                                    {prod.version}
+                                  </span>
+                                  <span className="text-xs font-mono text-slate-400">
+                                    Key: {lic.key}
+                                  </span>
+                                </div>
+                                <h3 className="text-base font-bold text-white mt-1">{prod.name}</h3>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  Bao gồm gói cài đặt + hướng dẫn cấu hình kèm License Manifest.
+                                </p>
+                              </div>
+
+                              <button
+                                onClick={() => handleDownloadPackage(prod, lic)}
+                                disabled={lic.status !== 'ACTIVE'}
+                                className={`px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                                  lic.status === 'ACTIVE'
+                                    ? 'bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_20px_rgba(0,212,255,0.3)] hover:opacity-95'
+                                    : 'bg-white/5 text-slate-500 cursor-not-allowed'
+                                }`}
+                              >
+                                <Download className="w-4 h-4" />
+                                <span>Tải Gói Cài Đặt</span>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 4: Profile Overview */}
+                {accountTab === 'OVERVIEW' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6 space-y-4">
+                    <h2 className="text-lg font-bold text-white">Thông Tin Hồ Sơ</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div className="p-4 rounded-xl bg-[#08090D] border border-white/10">
+                        <span className="text-xs font-mono text-slate-400 block">USER ID</span>
+                        <span className="font-mono text-white mt-1 block">{currentUser.id}</span>
+                      </div>
+                      <div className="p-4 rounded-xl bg-[#08090D] border border-white/10">
+                        <span className="text-xs font-mono text-slate-400 block">USERNAME</span>
+                        <span className="font-bold text-white mt-1 block">{currentUser.username}</span>
+                      </div>
+                      <div className="p-4 rounded-xl bg-[#08090D] border border-white/10">
+                        <span className="text-xs font-mono text-slate-400 block">EMAIL</span>
+                        <span className="text-white mt-1 block">{currentUser.email}</span>
+                      </div>
+                      <div className="p-4 rounded-xl bg-[#08090D] border border-white/10">
+                        <span className="text-xs font-mono text-slate-400 block">NGÀY THAM GIA</span>
+                        <span className="text-white mt-1 block">
+                          {new Date(currentUser.createdAt).toLocaleString('vi-VN')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* --------------------------------------------------------------------
+            VIEW 6: ADMIN DASHBOARD (Protected Route)
+           -------------------------------------------------------------------- */}
+        {activeRoute === 'ADMIN' && (
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {!currentUser || currentUser.role !== 'ADMIN' ? (
+              <div className="max-w-lg mx-auto backdrop-blur-xl bg-[#0f111a]/90 border border-rose-500/30 rounded-3xl p-8 text-center">
+                <Lock className="w-12 h-12 text-rose-400 mx-auto mb-4" />
+                <h1 className="text-2xl font-black text-white">Khu Vực Hạn Chế (Admin Only)</h1>
+                <p className="mt-2 text-sm text-slate-400">
+                  Bạn cần đăng nhập bằng tài khoản có quyền <strong>ADMIN</strong> để truy cập bảng điều khiển quản trị.
+                </p>
+                <div className="mt-6 flex justify-center gap-3">
+                  <button
+                    onClick={() => handleQuickDemoLogin('ADMIN')}
+                    className="px-5 py-3 rounded-xl bg-[#8B5CF6] text-xs font-bold text-white"
+                  >
+                    Đăng nhập quyền Admin ngay
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Admin Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#8B5CF6]">
+                      // SAVIOUR COMMAND CENTER
+                    </span>
+                    <h1 className="mt-1 text-3xl font-black text-white">
+                      Bảng Điều Khiển Quản Trị
+                    </h1>
+                  </div>
+
+                  {/* Admin Sub-Navigation */}
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { id: 'DASHBOARD' as const, label: 'Tổng quan', icon: Activity },
+                      {
+                        id: 'ORDERS' as const,
+                        label: `Đơn hàng (${orders.length})`,
+                        icon: ShoppingCart
+                      },
+                      {
+                        id: 'PRODUCTS' as const,
+                        label: `Sản phẩm (${products.length})`,
+                        icon: Package
+                      },
+                      {
+                        id: 'LICENSES' as const,
+                        label: `License Keys (${licenses.length})`,
+                        icon: Key
+                      },
+                      { id: 'USERS' as const, label: `Người dùng (${users.length})`, icon: Users },
+                      { id: 'SETTINGS' as const, label: 'Cấu hình Web', icon: Settings }
+                    ].map((tab) => {
+                      const Icon = tab.icon;
+                      const active = adminTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setAdminTab(tab.id)}
+                          className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                            active
+                              ? 'bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]'
+                              : 'bg-[#0f111a]/80 text-slate-300 border border-white/10 hover:border-white/25'
+                          }`}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ADMIN TAB 1: DASHBOARD & REVENUE ANALYTICS */}
+                {adminTab === 'DASHBOARD' && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                        <span className="text-xs font-mono text-slate-400">
+                          DOANH THU THỰC TẾ (PAID)
+                        </span>
+                        <div className="mt-2 text-2xl sm:text-3xl font-black text-emerald-400">
+                          {formatVND(totalRevenue)}
+                        </div>
+                        <span className="text-[11px] text-slate-500 mt-1 block">
+                          Tính từ {paidOrders.length} đơn đã thanh toán
+                        </span>
+                      </div>
+
+                      <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                        <span className="text-xs font-mono text-slate-400">
+                          ĐƠN CHỜ DUYỆT (PENDING)
+                        </span>
+                        <div className="mt-2 text-2xl sm:text-3xl font-black text-amber-300">
+                          {pendingOrders.length}
+                        </div>
+                        <button
+                          onClick={() => setAdminTab('ORDERS')}
+                          className="text-[11px] text-[#00D4FF] hover:underline mt-1 inline-block"
+                        >
+                          Kiểm tra & duyệt đơn →
+                        </button>
+                      </div>
+
+                      <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                        <span className="text-xs font-mono text-slate-400">
+                          LICENSE KEYS ĐÃ CẤP
+                        </span>
+                        <div className="mt-2 text-2xl sm:text-3xl font-black text-[#c4b5fd]">
+                          {licenses.length}
+                        </div>
+                        <span className="text-[11px] text-slate-500 mt-1 block">
+                          Đang hoạt động: {licenses.filter((l) => l.status === 'ACTIVE').length}
+                        </span>
+                      </div>
+
+                      <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                        <span className="text-xs font-mono text-slate-400">
+                          TICKET HỖ TRỢ MỞ
+                        </span>
+                        <div className="mt-2 text-2xl sm:text-3xl font-black text-white">
+                          {tickets.filter((t) => t.status === 'OPEN').length}
+                        </div>
+                        <span className="text-[11px] text-slate-500 mt-1 block">
+                          Tổng ticket: {tickets.length}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Recent Pending Orders Quick Action */}
+                    <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                      <h2 className="text-lg font-bold text-white mb-4">
+                        Đơn Hàng Mới Nhất Cần Xử Lý
+                      </h2>
+                      {orders.length === 0 ? (
+                        <p className="text-sm text-slate-400">
+                          Chưa phát sinh đơn hàng nào trên hệ thống. Hãy thử đặt một sản phẩm ở trang Cửa hàng để kiểm tra luồng duyệt đơn.
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          {orders.slice(0, 5).map((ord) => (
+                            <div
+                              key={ord.id}
+                              className="p-4 rounded-xl bg-[#08090D] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                            >
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs font-bold text-[#00D4FF]">
+                                    {ord.id}
+                                  </span>
+                                  {renderOrderStatusBadge(ord.status)}
+                                </div>
+                                <p className="text-sm font-bold text-white mt-1">
+                                  {ord.productName} —{' '}
+                                  <span className="text-emerald-400">{formatVND(ord.amount)}</span>
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                  Khách: {ord.username} ({ord.userEmail}) • CK: {ord.transferNote}
+                                </p>
+                              </div>
+
+                              {ord.status === 'PENDING' && (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleAdminUpdateOrderStatus(ord.id, 'PAID')}
+                                    className="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-all"
+                                  >
+                                    Xác nhận PAID & Cấp Key
+                                  </button>
+                                  <button
+                                    onClick={() => handleAdminUpdateOrderStatus(ord.id, 'CANCELLED')}
+                                    className="px-3 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold"
+                                  >
+                                    Hủy
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ADMIN TAB 2: ORDER MANAGEMENT */}
+                {adminTab === 'ORDERS' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                    <h2 className="text-lg font-bold text-white mb-4">
+                      Quản Lý Toàn Bộ Đơn Hàng
+                    </h2>
+                    {orders.length === 0 ? (
+                      <p className="text-sm text-slate-400 py-6">Chưa có đơn hàng nào.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {orders.map((ord) => (
+                          <div
+                            key={ord.id}
+                            className="p-5 rounded-2xl bg-[#08090D] border border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-mono text-xs font-bold text-[#00D4FF]">
+                                  {ord.id}
+                                </span>
+                                {renderOrderStatusBadge(ord.status)}
+                                <span className="text-xs font-mono text-slate-500">
+                                  {new Date(ord.createdAt).toLocaleString('vi-VN')}
+                                </span>
+                              </div>
+                              <div className="text-base font-bold text-white">{ord.productName}</div>
+                              <div className="text-xs text-slate-400">
+                                Khách hàng: <strong className="text-slate-200">{ord.username}</strong>{' '}
+                                ({ord.userEmail}) | Phương thức: {ord.paymentMethod}
+                              </div>
+                              <div className="text-xs font-mono text-amber-300">
+                                Nội dung chuyển khoản: {ord.transferNote}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="text-lg font-black text-white mr-2">
+                                {formatVND(ord.amount)}
+                              </span>
+                              {ord.status !== 'PAID' && (
+                                <button
+                                  onClick={() => handleAdminUpdateOrderStatus(ord.id, 'PAID')}
+                                  className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase transition-all"
+                                >
+                                  Duyệt PAID + Cấp Key
+                                </button>
+                              )}
+                              {ord.status !== 'CANCELLED' && (
+                                <button
+                                  onClick={() => handleAdminUpdateOrderStatus(ord.id, 'CANCELLED')}
+                                  className="px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-bold text-xs"
+                                >
+                                  Hủy Đơn
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ADMIN TAB 3: PRODUCT CRUD MANAGEMENT */}
+                {adminTab === 'PRODUCTS' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                      <div>
+                        <h2 className="text-lg font-bold text-white">
+                          Quản Lý Danh Mục & Sản Phẩm
+                        </h2>
+                        <p className="text-xs text-slate-400">
+                          Thêm, chỉnh sửa giá, phiên bản, nhãn nổi bật hoặc xóa sản phẩm.
+                        </p>
+                      </div>
+                      <button
+                        onClick={openCreateProductModal}
+                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 self-start"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Thêm Sản Phẩm Mới</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {products.map((prod) => (
+                        <div
+                          key={prod.id}
+                          className="p-4 rounded-2xl bg-[#08090D] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-white/5 text-[#00D4FF] border border-white/10">
+                                {prod.category}
+                              </span>
+                              <span className="text-xs font-mono text-slate-400">
+                                {prod.version}
+                              </span>
+                              {renderBadge(prod.badge)}
+                            </div>
+                            <h3 className="font-bold text-white text-base">{prod.name}</h3>
+                            <p className="text-xs text-slate-400 line-clamp-1">
+                              {prod.shortDescription}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="font-black text-white text-base mr-2">
+                              {formatVND(prod.price)}
+                            </span>
+                            <button
+                              onClick={() => openEditProductModal(prod)}
+                              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200"
+                              title="Chỉnh sửa"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(prod.id)}
+                              className="p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400"
+                              title="Xóa sản phẩm"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ADMIN TAB 4: LICENSE KEY MANAGEMENT */}
+                {adminTab === 'LICENSES' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                    <h2 className="text-lg font-bold text-white mb-4">
+                      Quản Lý Mã Bản Quyền (License Keys)
+                    </h2>
+                    {licenses.length === 0 ? (
+                      <p className="text-sm text-slate-400">
+                        Chưa có mã bản quyền nào được tạo. Mã sẽ tự động sinh khi đơn hàng được duyệt PAID.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {licenses.map((lic) => (
+                          <div
+                            key={lic.id}
+                            className="p-4 rounded-xl bg-[#08090D] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <code className="font-mono text-sm font-bold text-[#00D4FF]">
+                                  {lic.key}
+                                </code>
+                                <span
+                                  className={`px-2 py-0.5 text-[10px] font-mono rounded ${
+                                    lic.status === 'ACTIVE'
+                                      ? 'bg-emerald-500/15 text-emerald-400'
+                                      : 'bg-rose-500/15 text-rose-400'
+                                  }`}
+                                >
+                                  {lic.status}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-300 mt-1">
+                                Sản phẩm: <strong>{lic.productName}</strong> • Chủ sở hữu:{' '}
+                                <span className="text-[#c4b5fd]">{lic.username}</span> ({lic.orderId})
+                              </p>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setLicenses((prev) =>
+                                  prev.map((item) =>
+                                    item.id === lic.id
+                                      ? {
+                                          ...item,
+                                          status: item.status === 'ACTIVE' ? 'REVOKED' : 'ACTIVE'
+                                        }
+                                      : item
+                                  )
+                                );
+                                showToast(
+                                  'info',
+                                  'Đã cập nhật trạng thái Key',
+                                  `License ${lic.key} đã được thay đổi trạng thái.`
+                                );
+                              }}
+                              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-200 self-start md:self-auto"
+                            >
+                              {lic.status === 'ACTIVE' ? 'Thu hồi (Revoke)' : 'Kích hoạt lại'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ADMIN TAB 5: USERS MANAGEMENT */}
+                {adminTab === 'USERS' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                    <h2 className="text-lg font-bold text-white mb-4">Quản Lý Người Dùng</h2>
+                    <div className="space-y-3">
+                      {users.map((u) => (
+                        <div
+                          key={u.id}
+                          className="p-4 rounded-xl bg-[#08090D] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white">{u.username}</span>
+                              <span
+                                className={`px-2 py-0.5 text-[10px] font-mono rounded ${
+                                  u.role === 'ADMIN'
+                                    ? 'bg-[#8B5CF6]/20 text-[#c4b5fd]'
+                                    : 'bg-white/5 text-slate-400'
+                                }`}
+                              >
+                                {u.role}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-400">{u.email}</p>
+                          </div>
+
+                          {u.id !== currentUser.id && (
+                            <button
+                              onClick={() => {
+                                setUsers((prev) =>
+                                  prev.map((item) =>
+                                    item.id === u.id
+                                      ? { ...item, role: item.role === 'ADMIN' ? 'USER' : 'ADMIN' }
+                                      : item
+                                  )
+                                );
+                                showToast('success', 'Đã cập nhật quyền', `Đã đổi vai trò cho ${u.username}.`);
+                              }}
+                              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-200 self-start sm:self-auto"
+                            >
+                              Đổi sang {u.role === 'ADMIN' ? 'USER' : 'ADMIN'}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ADMIN TAB 6: WEBSITE CONTENT & PAYMENT CONFIG */}
+                {adminTab === 'SETTINGS' && (
+                  <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6 space-y-6">
+                    <h2 className="text-lg font-bold text-white">
+                      Cấu Hình Nội Dung Website & Cổng Thanh Toán
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                          THÔNG BÁO HEADER TOÀN TRANG
+                        </label>
+                        <input
+                          type="text"
+                          value={systemConfig.announcementBanner}
+                          onChange={(e) =>
+                            setSystemConfig({ ...systemConfig, announcementBanner: e.target.value })
+                          }
+                          className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                          NGÂN HÀNG NHẬN THANH TOÁN
+                        </label>
+                        <input
+                          type="text"
+                          value={systemConfig.bankName}
+                          onChange={(e) =>
+                            setSystemConfig({ ...systemConfig, bankName: e.target.value })
+                          }
+                          className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                          SỐ TÀI KHOẢN / VÍ NHẬN TIỀN
+                        </label>
+                        <input
+                          type="text"
+                          value={systemConfig.bankAccountNumber}
+                          onChange={(e) =>
+                            setSystemConfig({
+                              ...systemConfig,
+                              bankAccountNumber: e.target.value
+                            })
+                          }
+                          className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                          CHỦ TÀI KHOẢN
+                        </label>
+                        <input
+                          type="text"
+                          value={systemConfig.bankAccountOwner}
+                          onChange={(e) =>
+                            setSystemConfig({ ...systemConfig, bankAccountOwner: e.target.value })
+                          }
+                          className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-mono text-slate-400 mb-1.5">
+                          LINK DISCORD CỘNG ĐỒNG
+                        </label>
+                        <input
+                          type="text"
+                          value={systemConfig.discordInviteUrl}
+                          onChange={(e) =>
+                            setSystemConfig({ ...systemConfig, discordInviteUrl: e.target.value })
+                          }
+                          className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-[#08090D] border border-white/10 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-white">
+                          Trạng thái kết nối Webhook Cổng Thanh Toán Tự Động
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Chỉ bật ON khi bạn đã triển khai Backend nhận Webhook từ PayOS / SePay / Casso.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextVal = !systemConfig.paymentGatewayConnected;
+                          setSystemConfig({ ...systemConfig, paymentGatewayConnected: nextVal });
+                          showToast(
+                            'info',
+                            'Cập nhật trạng thái cổng thanh toán',
+                            nextVal
+                              ? 'Đã chuyển hiển thị sang ĐÃ KẾT NỐI.'
+                              : 'Đã chuyển về chế độ XÁC NHẬN THỦ CÔNG.'
+                          );
+                        }}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold ${
+                          systemConfig.paymentGatewayConnected
+                            ? 'bg-emerald-500 text-slate-950'
+                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        }`}
+                      >
+                        {systemConfig.paymentGatewayConnected ? 'CONNECTED' : 'NOT CONNECTED'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* --------------------------------------------------------------------
+            VIEW 7: SUPPORT & FAQ PAGE
+           -------------------------------------------------------------------- */}
+        {activeRoute === 'SUPPORT' && (
+          <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#00D4FF]">
+                // 24/7 TECHNICAL SUPPORT
+              </span>
+              <h1 className="mt-2 text-3xl sm:text-5xl font-black text-white">
+                Trung Tâm Hỗ Trợ SAVIOUR
+              </h1>
+              <p className="mt-3 text-sm text-slate-400">
+                Giải đáp thắc mắc về kích hoạt License Key, thanh toán đơn hàng và hỗ trợ tích hợp kỹ thuật.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* FAQ Accordion */}
+              <div className="lg:col-span-6 space-y-3">
+                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-[#8B5CF6]" />
+                  <span>Câu Hỏi Thường Gặp</span>
+                </h2>
+                {[
+                  {
+                    q: 'Sau khi đặt hàng bao lâu thì nhận được License Key?',
+                    a: 'Đơn hàng sau khi tạo sẽ mang trạng thái PENDING. Ngay sau khi giao dịch thanh toán được xác nhận thành công (PAID), hệ thống tự động sinh mã Key_XXXXX và mở khóa nút tải xuống trong trang Tài khoản của bạn.'
+                  },
+                  {
+                    q: 'Tôi có thể chuyển License Key sang máy tính / VPS khác không?',
+                    a: 'Có. Mỗi License Key hỗ trợ Reset HWID khi bạn nâng cấp phần cứng hoặc đổi VPS. Bạn chỉ cần tạo Ticket hỗ trợ hoặc nhắn tin trực tiếp trên Discord SAVIOUR.'
+                  },
+                  {
+                    q: 'Các sản phẩm có được cập nhật tính năng mới miễn phí không?',
+                    a: 'Tất cả gói bản quyền LIFETIME trên SAVIOUR đều được cập nhật miễn phí các phiên bản vá lỗi và nâng cấp hiệu năng mới nhất.'
+                  }
+                ].map((faq, idx) => (
+                  <div
+                    key={idx}
+                    className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl overflow-hidden"
+                  >
+                    <button
+                      onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                      className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm text-white"
+                    >
+                      <span>{faq.q}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#00D4FF] transition-transform ${
+                          openFaqIndex === idx ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+                    {openFaqIndex === idx && (
+                      <div className="px-5 pb-5 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-white/5 pt-3">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Ticket Form */}
+              <div className="lg:col-span-6 backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6 sm:p-8">
+                <h2 className="text-lg font-bold text-white mb-4">Gửi Ticket Hỗ Trợ Kỹ Thuật</h2>
+                <form onSubmit={handleSupportSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">
+                      TÊN / USERNAME CỦA BẠN
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={supportName}
+                      onChange={(e) => setSupportName(e.target.value)}
+                      placeholder="Nhập tên của bạn"
+                      className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white focus:outline-none focus:border-[#00D4FF]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">
+                      DISCORD TAG HOẶC EMAIL LIÊN HỆ
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={supportContact}
+                      onChange={(e) => setSupportContact(e.target.value)}
+                      placeholder="vd: saviour_user#0001 hoặc email@domain.com"
+                      className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white focus:outline-none focus:border-[#00D4FF]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">
+                      TIÊU ĐỀ / MÃ ĐƠN HÀNG (NẾU CÓ)
+                    </label>
+                    <input
+                      type="text"
+                      value={supportSubject}
+                      onChange={(e) => setSupportSubject(e.target.value)}
+                      placeholder="vd: Hỗ trợ kích hoạt đơn ORD-2026-..."
+                      className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white focus:outline-none focus:border-[#00D4FF]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">
+                      NỘI DUNG CHI TIẾT
+                    </label>
+                    <textarea
+                      rows={4}
+                      required
+                      value={supportMessage}
+                      onChange={(e) => setSupportMessage(e.target.value)}
+                      placeholder="Mô tả vấn đề bạn đang gặp phải..."
+                      className="w-full px-4 py-3 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white focus:outline-none focus:border-[#00D4FF]"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]"
+                  >
+                    Gửi Yêu Cầu Hỗ Trợ
+                  </button>
+                </form>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* --------------------------------------------------------------------
+            VIEW 8: PRODUCTION BACKEND & DATABASE ARCHITECTURE BLUEPRINT
+           -------------------------------------------------------------------- */}
+        {activeRoute === 'ARCHITECTURE' && (
+          <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#00D4FF]">
+                // PRODUCTION BLUEPRINT
+              </span>
+              <h1 className="mt-2 text-3xl sm:text-4xl font-black text-white">
+                Kiến Trúc Backend, Database & Bảo Mật SAVIOUR
+              </h1>
+              <p className="mt-2 text-sm text-slate-400">
+                Thiết kế chuẩn triển khai thực tế với Next.js App Router, PostgreSQL (Prisma ORM), JWT HTTP-Only Cookie và Webhook thanh toán VietQR / PayOS.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                <Server className="w-6 h-6 text-[#8B5CF6] mb-3" />
+                <h3 className="font-bold text-white">API Routes & RBAC Middleware</h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  Tách biệt hoàn toàn API Admin (`/api/admin/*`) với xác thực JWT + Role Check phía server. Không bao giờ lưu Secret Key thanh toán hay Private Key ký License ở Frontend.
+                </p>
+              </div>
+              <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                <Database className="w-6 h-6 text-[#00D4FF] mb-3" />
+                <h3 className="font-bold text-white">PostgreSQL + Prisma Schema</h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  Ràng buộc toàn vẹn dữ liệu quan hệ giữa bảng User, Product, Order và LicenseKey. Đảm bảo mỗi đơn hàng PAID chỉ sinh duy nhất một mã bản quyền hợp lệ.
+                </p>
+              </div>
+              <div className="backdrop-blur-md bg-[#0f111a]/80 border border-white/10 rounded-2xl p-6">
+                <Shield className="w-6 h-6 text-emerald-400 mb-3" />
+                <h3 className="font-bold text-white">Webhook Signature Verification</h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  Xác minh chữ ký HMAC-SHA256 từ cổng thanh toán Việt Nam (PayOS / SePay / Casso) trước khi cập nhật trạng thái đơn từ PENDING sang PAID.
+                </p>
+              </div>
+            </div>
+
+            <div className="backdrop-blur-md bg-[#07080c] border border-white/10 rounded-2xl p-6 overflow-x-auto">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/10">
+                <span className="text-xs font-mono text-[#00D4FF]">prisma/schema.prisma</span>
+                <span className="text-[11px] font-mono text-slate-500">PostgreSQL Relational Model</span>
+              </div>
+              <pre className="text-xs font-mono text-slate-300 leading-relaxed">
+                <code>{`model User {
+  id           String       @id @default(cuid())
+  username     String       @unique
+  email        String       @unique
+  passwordHash String
+  role         Role         @default(USER)
+  orders       Order[]
+  licenses     LicenseKey[]
+  createdAt    DateTime     @default(now())
+}
+
+model Product {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  category    Category
+  price       Int
+  version     String
+  status      ProdStatus   @default(ACTIVE)
+  orders      Order[]
+  licenses    LicenseKey[]
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  productId     String
+  amount        Int
+  status        OrderStatus @default(PENDING) // PENDING | PAID | CANCELLED
+  transferNote  String      @unique
+  user          User        @relation(fields: [userId], references: [id])
+  product       Product     @relation(fields: [productId], references: [id])
+  license       LicenseKey?
+  createdAt     DateTime    @default(now())
+  paidAt        DateTime?
+}
+
+model LicenseKey {
+  id        String   @id @default(cuid())
+  key       String   @unique // Format: Key_XXXXX-XXXXX-XXXXX
+  orderId   String   @unique
+  userId    String
+  productId String
+  hwidHash  String?
+  status    String   @default("ACTIVE")
+  order     Order    @relation(fields: [orderId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+}`}</code>
+              </pre>
+            </div>
+          </section>
+        )}
+      </main>
+
+      {/* ======================================================================
+          DISCORD COMMUNITY MODAL
+         ====================================================================== */}
+      {discordModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-[#0f111a] border border-[#00D4FF]/40 rounded-3xl p-7 shadow-[0_0_50px_rgba(0,212,255,0.2)] relative">
+            <button
+              onClick={() => setDiscordModalOpen(false)}
+              className="absolute top-5 right-5 p-2 rounded-xl bg-white/5 text-slate-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 flex items-center justify-center text-[#00D4FF] mb-4">
+              <MessageSquare className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-xl font-black text-white">SAVIOUR Official Discord</h3>
+            <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Tham gia máy chủ Discord chính thức của SAVIOUR để nhận thông báo cập nhật phiên bản mới, hỗ trợ kích hoạt License Key và giao lưu cùng cộng đồng Developer.
+            </p>
+
+            <div className="mt-5 p-3.5 rounded-xl bg-[#08090D] border border-white/10 flex items-center justify-between gap-2">
+              <code className="text-xs font-mono text-[#00D4FF] truncate">
+                {systemConfig.discordInviteUrl}
+              </code>
+              <button
+                onClick={() => handleCopyText(systemConfig.discordInviteUrl, 'discord_url')}
+                className="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-bold text-white shrink-0"
+              >
+                Copy Link
+              </button>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <a
+                href={systemConfig.discordInviteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-white text-xs font-bold uppercase tracking-wider text-center flex items-center justify-center gap-2"
+              >
+                <span>Mở Discord</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          ADMIN PRODUCT CREATE / EDIT MODAL
+         ====================================================================== */}
+      {isProductModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="max-w-2xl w-full bg-[#0f111a] border border-[#8B5CF6]/40 rounded-3xl p-6 sm:p-8 shadow-2xl my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <h3 className="text-xl font-black text-white">
+                {editingProduct ? 'Chỉnh Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới'}
+              </h3>
+              <button
+                onClick={() => setIsProductModalOpen(false)}
+                className="p-2 rounded-xl bg-white/5 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProduct} className="mt-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-mono text-slate-400 mb-1">
+                    TÊN SẢN PHẨM
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={prodForm.name}
+                    onChange={(e) => setProdForm({ ...prodForm, name: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">DANH MỤC</label>
+                  <select
+                    value={prodForm.category}
+                    onChange={(e) =>
+                      setProdForm({ ...prodForm, category: e.target.value as Category })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                  >
+                    <option value="TOOL">TOOL</option>
+                    <option value="DISCORD BOT">DISCORD BOT</option>
+                    <option value="SCRIPT">SCRIPT</option>
+                    <option value="AUTOMATION">AUTOMATION</option>
+                    <option value="UTILITIES">UTILITIES</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">NHÃN NỔI BẬT</label>
+                  <select
+                    value={prodForm.badge}
+                    onChange={(e) =>
+                      setProdForm({ ...prodForm, badge: e.target.value as ProductBadge })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                  >
+                    <option value="NEW">NEW</option>
+                    <option value="HOT">HOT</option>
+                    <option value="BEST SELLER">BEST SELLER</option>
+                    <option value="NONE">Không gắn nhãn</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">
+                    GIÁ BÁN (VND)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    step={1000}
+                    value={prodForm.price}
+                    onChange={(e) => setProdForm({ ...prodForm, price: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">PHIÊN BẢN</label>
+                  <input
+                    type="text"
+                    value={prodForm.version}
+                    onChange={(e) => setProdForm({ ...prodForm, version: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">TRẠNG THÁI</label>
+                  <select
+                    value={prodForm.status}
+                    onChange={(e) =>
+                      setProdForm({ ...prodForm, status: e.target.value as ProductStatus })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                  >
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="MAINTENANCE">MAINTENANCE</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">
+                    GIAO DIỆN PREVIEW ART
+                  </label>
+                  <select
+                    value={prodForm.artVariant}
+                    onChange={(e) =>
+                      setProdForm({
+                        ...prodForm,
+                        artVariant: e.target.value as Product['artVariant']
+                      })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                  >
+                    <option value="terminal-cli">Terminal CLI</option>
+                    <option value="cyber-bot">Cyber Discord Bot</option>
+                    <option value="automation-flow">Automation Flow</option>
+                    <option value="security-shield">Security Shield</option>
+                    <option value="macro-engine">Macro Engine</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono text-slate-400 mb-1">MÔ TẢ NGẮN</label>
+                <input
+                  type="text"
+                  required
+                  value={prodForm.shortDescription}
+                  onChange={(e) => setProdForm({ ...prodForm, shortDescription: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono text-slate-400 mb-1">
+                  MÔ TẢ CHI TIẾT
+                </label>
+                <textarea
+                  rows={2}
+                  value={prodForm.fullDescription}
+                  onChange={(e) => setProdForm({ ...prodForm, fullDescription: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-sm text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">
+                    TÍNH NĂNG (MỖI DÒNG 1 Ý)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={prodForm.featuresText}
+                    onChange={(e) => setProdForm({ ...prodForm, featuresText: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-xs text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">
+                    HƯỚNG DẪN SỬ DỤNG (MỖI BƯỚC 1 DÒNG)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={prodForm.usageGuideText}
+                    onChange={(e) => setProdForm({ ...prodForm, usageGuideText: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#08090D] border border-white/10 text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsProductModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-white/5 text-xs font-bold text-slate-300"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#00D4FF] text-xs font-bold text-white uppercase"
+                >
+                  Lưu Sản Phẩm
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================
+          PROFESSIONAL FOOTER
+         ====================================================================== */}
+      <footer className="relative z-10 border-t border-white/10 bg-[#06070a]/95 mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+            <div className="md:col-span-2 space-y-4">
+              <SaviourLogo size="md" />
+              <p className="text-xs sm:text-sm text-slate-400 max-w-md leading-relaxed">
+                Nền tảng phân phối phần mềm kỹ thuật số độc quyền: Tool hiệu năng cao, Discord Bot tự động hóa, Script bảo mật và tiện ích tối ưu hệ thống.
+              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] font-mono text-slate-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span>SYSTEM CORE: OPERATIONAL • LICENSE ENGINE v3</span>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-white mb-4">
+                Điều Hướng
+              </h4>
+              <ul className="space-y-2.5 text-xs text-slate-400">
+                <li>
+                  <button onClick={() => navigateTo('HOME')} className="hover:text-[#00D4FF]">
+                    Trang chủ (Home)
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigateTo('PRODUCTS')} className="hover:text-[#00D4FF]">
+                    Danh mục sản phẩm
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigateTo('SUPPORT')} className="hover:text-[#00D4FF]">
+                    Hỗ trợ kỹ thuật & FAQ
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigateTo('ARCHITECTURE')}
+                    className="hover:text-[#00D4FF]"
+                  >
+                    Kiến trúc Backend & Database
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-white mb-4">
+                Tài Khoản & Cộng Đồng
+              </h4>
+              <ul className="space-y-2.5 text-xs text-slate-400">
+                <li>
+                  <button onClick={() => navigateTo('ACCOUNT')} className="hover:text-[#00D4FF]">
+                    Quản lý License Key
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigateTo('ACCOUNT')} className="hover:text-[#00D4FF]">
+                    Tải xuống phần mềm
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setDiscordModalOpen(true)}
+                    className="hover:text-[#00D4FF]"
+                  >
+                    Discord Server chính thức
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p>© {new Date().getFullYear()} SAVIOUR DIGITAL SYSTEMS. All rights reserved.</p>
+            <p className="font-mono text-[11px]">
+              BUILT BEYOND LIMITS • #08090D / #8B5CF6 / #00D4FF
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
+```
